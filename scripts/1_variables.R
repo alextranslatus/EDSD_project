@@ -1,8 +1,18 @@
 
-library(readr) # read csv
-library(haven) # read dta
-library(dplyr) # basics
-library(data.table) # data.table
+for(
+  pkg in c(
+    "readr", # read csv
+    "haven", # read dta
+    "readxl", # read xlsx
+    "dplyr", # basics
+    "data.table" # data.table
+  )
+){
+  if(!require(pkg, quietly = TRUE, character.only = TRUE)){
+    install.packages(pkg)
+  }
+  
+}
 
 # Loading Elfe
 base <- read_csv("data/20250610DEM_1066_LP/DATA_DEM_1066_LP.csv")
@@ -25,224 +35,74 @@ rm(list = ls(pattern = "^eqr"))
 
 # Loading MCS
 mcs <- read_dta("data/mcs123_clean.dta")
+dict_mcs <- read_excel("~/Documents/Work/EDSD project/R/data/mcs_catalog.xlsx")
 
 # To data.table
 base <- as.data.table(base)
 mcs <- as.data.table(mcs)
 
+# Functions ####
+source("scripts/functions.R")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Weights ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# elfe: A01E_PONDREF A02E_PONDREF A03E_PONDREF A05E_PONDREF
-# mcs: wgt9m wgt3 wgt5
 
 # Elfe
-
-
+base <- base %>% rename(wgt1 = A01E_PONDREF,
+                      wgt2 = A02E_PONDREF,
+                      wgt3 = A03E_PONDREF,
+                      wgt5 = A05E_PONDREF)
 # MCS
-
-mcs <- mcs %>% rename(wgt9m = AOVWT2, wgt3 = BOVWT2, wgt5 = COVWT2)
+mcs <- mcs %>% rename(wgt9m = AOVWT2,
+                      wgt3 = BOVWT2,
+                      wgt5 = COVWT2)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Sex ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# elfe & mcs
-# sex: 1 Male 2 Female
 
 # Elfe
 
-base <- base %>% rename(sex = SEXE_ENF) 
+base <- base %>% rename(sex = SEXE_ENF) # 1 = "Male", 2 = "Female"
 
 # MCS
 
-mcs <- mcs %>% rename(sex = AHCSEX00)
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Age ####
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# elfe
-# age1y age2y age3y 
-# 
-# mcs
-# age9m age3y age5y
-
-# Elfe
-
-base <- combine("A01M_AGE1A", "A01P_AGE1A", "age1y")
-base <- combine("A02M_AGE2A", "A02P_AGE2A", "age2y")
-base$age3y <- base$A03R_AGE3A
-
-# MCS
-
-mcs[, age9m:= round(AHCAGE00 / 30.44, 2)]
-mcs[, age3y:= round(BHCAGE00 / 30.44, 2)]
-mcs[CHCAGE00 > 0, age5y:= round(CHCAGE00 / 30.44, 2)]
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Potty variables ####
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# elfe
-# A01C_POT A02C_POT: 1 Never 2 Sometimes 3 Often 4 Always
-# A02C_COUCHNUI A02C_COUCHJOU (porte des couches ?): 1 Yes, always 2 Yes, sometimes 3 No
-# bin_pot_1: 0 Never use potty 1 Ever use potty
-# bin_pot_2: 0 Never/sometimes use potty 1 Often/always use potty
-# bin_couchn_2 bin_couchj_2: 0 Always in nappies 1 No/sometimes
-# bin_cdi8_3 bin_cdi8_5: 0 Doesn't 1 Fully controls bladder and bowel, day and night
-# 
-# mcs
-# dry3 clean3 (dry3rev clean3rev): 1 Always 2 Sometimes 3 Never
-# wetday5 wetnight5 (wetday5rev wetnight5rev): 1 Never wets during the day 2 Occasionally wets during the day 3 Wets during the day once or twice a wee 4 Wets during the day 3 or more times a w 5 Wears nappies or pull-ups during the da 
-# bin_dry3 bin_clean3: 0 Not always 1 Always
-# bin_wetday5 bin_wetnight5: 0 Ever 1 Never
-
-# Elfe
-
-base <- combine("A01M_POT", "A01P_POT", "A01C_POT")
-base <- combine("A02M_POT", "A02P_POT", "A02C_POT")
-base <- combine("A02M_COUCHNUI", "A02P_COUCHNUI", "A02C_COUCHNUI")
-base <- combine("A02M_COUCHJOU", "A02P_COUCHJOU", "A02C_COUCHJOU")
-
-base[A01C_POT == 1, bin_pot_1:= 0]
-base[A01C_POT %in% c(2, 3, 4), bin_pot_1:= 1]
-
-base[A02C_POT %in% c(1, 2), bin_pot_2:= 0]
-base[A02C_POT %in% c(3, 4), bin_pot_2:= 1]
-
-base[A02C_COUCHNUI == 1, bin_couchn_2:= 0]
-base[A02C_COUCHNUI %in% c(2, 3), bin_couchn_2:= 1]
-
-base[A02C_COUCHJOU == 1, bin_couchj_2:= 0]
-base[A02C_COUCHJOU %in% c(2, 3), bin_couchj_2:= 1]
-
-base[A03R_CDI8 == 1, bin_cdi8_3:= 1]
-base[A03R_CDI8 == 2, bin_cdi8_3:= 0]
-
-base[A05R_CDI8 == 1, bin_cdi8_5:= 1]
-base[A05R_CDI8 == 2, bin_cdi8_5:= 0]
-
-# Additive index
-
-base$sc_p1 <- recode(base$A01C_POT, `1` = 0, `2` = 1, `3` = 2, `4` = 3, .default = NaN)
-base$sc_p2 <- recode(base$A02C_POT, `1` = 0, `2` = 1, `3` = 2, `4` = 3, .default = NaN)
-base$sc_cn <- recode(base$A02C_COUCHNUI, `1` = 0, `2` = 1, `3` = 2, .default = NaN)
-base$sc_cj <- recode(base$A02C_COUCHJOU, `1` = 0, `2` = 1, `3` = 2, .default = NaN)
-base$sc_cdi <- recode(base$bin_cdi8_3, `0` = 0, `1` = 1, .default = NaN)
-
-base$sc <- base$sc_p1 + base$sc_p2 + base$sc_cn + base$sc_cj + base$sc_cdi
-base$sc1 <- base$sc_p1 + base$sc_p2 + base$sc_cn + base$sc_cj
-base$sc2 <- base$sc_cdi
-
-base$std_sc <- base$sc
-base$std_sc1 <- base$sc1
-base$std_sc2 <- base$sc2
-
-base <- base %>% mutate_at(c('std_sc'), ~(scale(.) %>% as.vector))
-base <- base %>% mutate_at(c('std_sc1'), ~(scale(.) %>% as.vector))
-base <- base %>% mutate_at(c('std_sc2'), ~(scale(.) %>% as.vector))
-
-
-# MCS
-
-mcs <- mcs %>% rename(dad9m = APNACH00, 
-                      resp9m = APCHNA00,
-                      dry3 = BPDRDA00,
-                      clean3 = BPCLDA00,
-                      wetday5 = CPDRYD00,
-                      wetnight5  = CPDRYN00)
-
-mcs[dry3 < 0 | dry3 == 4, dry3:= NA]
-mcs[clean3 < 0 | clean3 == 4, clean3:= NA]
-mcs[wetday5 < 0, wetday5:= NA]
-mcs[wetnight5 < 0, wetnight5:= NA]
-
-mcs[, dry3rev:= -(dry3 - 4)]
-mcs[, clean3rev:= -(clean3 - 4)]
-mcs[, wetday5rev:= -(wetday5 - 6)]
-mcs[, wetnight5rev:= -(wetnight5 - 6)]
-
-mcs[clean3 < 0 | clean3 == 4, clean3:= NA]
-mcs[wetday5 < 0, wetday5:= NA]
-mcs[wetnight5 < 0, wetnight5:= NA]
-
-mcs[dry3 == 1, bin_dry3:= 1]
-mcs[dry3 %in% c(2, 3), bin_dry3:= 0]
-
-mcs[clean3 == 1, bin_clean3:= 1]
-mcs[clean3 %in% c(2, 3), bin_clean3:= 0]
-
-mcs[wetday5 == 1, bin_wetday5:= 1]
-mcs[wetday5 %in% c(2, 3, 4, 5), bin_wetday5:= 0]
-
-mcs[wetnight5 == 1, bin_wetnight5:= 1]
-mcs[wetnight5 %in% c(2, 3, 4, 5), bin_wetnight5:= 0]
-
-# Additive index
-
-mcs$sc_d <- recode(mcs$dry3, `1` = 2, `2` = 1, `3` = 0, .default = NaN)
-mcs$sc_c <- recode(mcs$clean3, `1` = 2, `2` = 1, `3` = 0, .default = NaN)
-mcs$sc_wd <- recode(mcs$wetday5, `1` = 4, `2` = 3, `3` = 2, `4` = 1, `5` = 0, .default = NaN)
-mcs$sc_wn <- recode(mcs$wetnight5, `1` = 4, `2` = 3, `3` = 2, `4` = 1, `5` = 0, .default = NaN)
-
-mcs$sc <- mcs$sc_d + mcs$sc_c + mcs$sc_wd + mcs$sc_wn
-mcs$sc1 <- mcs$sc_d + mcs$sc_c
-mcs$sc2 <- mcs$sc_wd + mcs$sc_wn
-
-mcs$std_sc <- mcs$sc
-mcs$std_sc1 <- mcs$sc1
-mcs$std_sc2 <- mcs$sc2
-
-mcs <- mcs %>% mutate_at(c('std_sc'), ~(scale(.) %>% as.vector))
-mcs <- mcs %>% mutate_at(c('std_sc1'), ~(scale(.) %>% as.vector))
-mcs <- mcs %>% mutate_at(c('std_sc2'), ~(scale(.) %>% as.vector))
+mcs <- mcs %>% rename(sex = AHCSEX00) # 1 = "Male", 2 = "Female"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Education ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# elfe
-# meduc: 1 >bac+4 2 bac+3/4 3 bac+2 4 bac 5 cap-bep 6 <=bepc
-# meduc3: 1 low 2 med 3 high
+
 # mcs
 # meduc: 1 higher deg 2 bach 3 HE below deg 4 a-level 5 trade 6 GCSE A-C 7 GCSE D-G 8 Other 9 None
 # meduc3: 1 low 2 med 3 high
 
 # Elfe
+# Use info from the earlier wave possible: if info missing at 2m, take available info at 1y, etc.
+base[, meducaf_imp := fcoalesce(meducaf_2m, meducaf_1y, meducaf_2y, meducaf_3y)] # 1 = "<=bepc",  2 = "cap-bep", 3 = "bac", 4 = "bac+2", 5 = "bac+3/4", 6 = ">bac+4"
 
-base[!is.na(meducaf_2m), meducaf_imp:= meducaf_2m]
-base[is.na(meducaf_imp) & !is.na(meducaf_1y), meducaf_imp:= meducaf_1y]
-base[is.na(meducaf_imp) & !is.na(meducaf_2y), meducaf_imp:= meducaf_2y]
-base[is.na(meducaf_imp) & !is.na(meducaf_3y), meducaf_imp:= meducaf_3y]
-
-base[meducaf_imp == 6, meduc:= 1]
-base[meducaf_imp == 5, meduc:= 2]
-base[meducaf_imp == 4, meduc:= 3]
-base[meducaf_imp == 3, meduc:= 4]
-base[meducaf_imp == 2, meduc:= 5]
-base[meducaf_imp == 1, meduc:= 6]
-
-base[meduc %in% c(4, 5, 6), meduc3:= 1] # up to and including bac
-base[meduc == 3, meduc3:= 2] # bac+2
-base[meduc %in% c(1, 2), meduc3:= 3] # higher than bac+2
-
-# Bac could be put in the middle category? Would put us in line with dice
-
+# Three groups # 1 = "Low", 2 = "Medium", 3 = "High"
+base[meduc %in% c(1, 2, 3), meduc3 := 1]  # Up to and including bac
+base[meduc == 4,            meduc3 := 2]  # Bac +2 (consider including bac if desired)
+base[meduc %in% c(5, 6),    meduc3 := 3]  # Higher than bac +2
+ 
 # MCS
+mcs[APACQU00_m == 96 | APVCQU00_m == 96, meduc:= 1] # None of these qualifications | None of these qualifications 
+mcs[APACQU00_m == 95 | APVCQU00_m == 95, meduc:= 2] # Other academic qualifications | Other vocational qualifications
+mcs[APACQU00_m == 6  | APVCQU00_m == 6,  meduc:= 3] # GCSE grades D-G | NVQ / SVQ / GSVQ level 1
+mcs[APACQU00_m == 5  | APVCQU00_m == 5,  meduc:= 4] # O level / GCSE grades A-C | NVQ / SVQ / GSVQ level 2
+mcs[                   APVCQU00_m == 4,  meduc:= 5] # Trade apprenticeships
+mcs[APACQU00_m == 4  | APVCQU00_m == 3,  meduc:= 6] # A / AS / S levels | NVQ / SVQ / GSVQ level 3
+mcs[APACQU00_m == 3  | APVCQU00_m == 2,  meduc:= 7] # Dipl in higher ed | Nursing / other medical qualifications
+mcs[APACQU00_m == 2  | APVCQU00_m == 1,  meduc:= 8] # First degree |  Professional quals at degree level
+mcs[APACQU00_m == 1                   ,  meduc:= 9] # Higher degree
 
-mcs[APACQU00 == 96 | APVCQU00 == 96, meduc:= 9] # None of these qualifications | None of these qualifications 
-mcs[APACQU00 == 95 | APVCQU00 == 95, meduc:= 8] # Other academic qualifications | Other vocational qualifications
-mcs[APACQU00 == 6 | APVCQU00 == 6, meduc:= 7] # GCSE grades D-G | NVQ / SVQ / GSVQ level 1
-mcs[APACQU00 == 5 | APVCQU00 == 5, meduc:= 6] # O level / GCSE grades A-C | NVQ / SVQ / GSVQ level 2
-mcs[                APVCQU00 == 4, meduc:= 5] # Trade apprenticeships
-mcs[APACQU00 == 4 | APVCQU00 == 3, meduc:= 4] # A / AS / S levels | NVQ / SVQ / GSVQ level 3
-mcs[APACQU00 == 3 | APVCQU00 == 2, meduc:= 3] # Dipl in higher ed | Nursing / other medical qualifications
-mcs[APACQU00 == 2 | APVCQU00 == 1, meduc:= 2] # First degree |  Professional quals at degree level
-mcs[APACQU00 == 1                , meduc:= 1] # Higher degree
-
-## 3 categories, low, med, high
-mcs[meduc %in% c(6,7,8,9), meduc3:= 1] # Up to and including GCSEs
-mcs[meduc %in% c(3,4,5), meduc3:= 2] # Trade, A-level and HE below degree
-mcs[meduc %in% c(1,2), meduc3:= 3] # Bachelor's degree or Higher degree
-mcs[meduc == 9 & APLFTE00 > 16 & !is.na(APLFTE00), meduc3:= 2]
+# Three groups # 1 = "Low", 2 = "Medium", 3 = "High"
+mcs[meduc %in% c(1, 2, 3, 4), meduc3:= 1] # Up to and including GCSEs
+mcs[meduc %in% c(5, 6, 7), meduc3:= 2] # Trade, A-level and HE below degree
+mcs[meduc %in% c(8, 9), meduc3:= 3] # Bachelor's degree or Higher degree
+mcs[meduc == 1 & APLFTE00_m > 16 & !is.na(APLFTE00_m), meduc3:= 2] 
 
 # Cross-checked with DICE documentation: the code is correct. Differences with DICE tabulations
 # are because they look at parental edu and not just maternal edu.
