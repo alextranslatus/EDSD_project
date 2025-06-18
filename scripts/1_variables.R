@@ -11,7 +11,6 @@ for(
   if(!require(pkg, quietly = TRUE, character.only = TRUE)){
     install.packages(pkg)
   }
-  
 }
 
 # Loading Elfe
@@ -35,7 +34,7 @@ rm(list = ls(pattern = "^eqr"))
 
 # Loading MCS
 mcs <- read_dta("data/mcs123_clean.dta")
-dict_mcs <- read_excel("~/Documents/Work/EDSD project/R/data/mcs_catalog.xlsx")
+dict_mcs <- read_excel("data/mcs_catalog.xlsx")
 
 # To data.table
 base <- as.data.table(base)
@@ -73,7 +72,6 @@ mcs <- mcs %>% rename(sex = AHCSEX00) # 1 = "Male", 2 = "Female"
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Education ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # mcs
 # meduc: 1 higher deg 2 bach 3 HE below deg 4 a-level 5 trade 6 GCSE A-C 7 GCSE D-G 8 Other 9 None
 # meduc3: 1 low 2 med 3 high
@@ -119,6 +117,7 @@ mcs[meduc == 1 & APLFTE00_m > 16 & !is.na(APLFTE00_m), meduc3:= 2]
 # mptime9m mptime3y: 0 No 1 Yes
 
 # Elfe
+base[M02M_CONGMAT == ]
 
 base[M02M_LIENTYP_3 == 2, congmat_m_2m:= M02M_CONGMATPAR_3]
 base[M02P_LIENTYP_3 == 2 & is.na(congmat_m_2m), congmat_m_2m:= M02P_CONGMATPAR_3]
