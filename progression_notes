@@ -1,11 +1,29 @@
 
 # 18 june 2025
 
-set up github repository
+## Set up github repository
 
-coded weights, child sex, mothers' education
+## Coded weights, child sex, mothers' education
 
-problem:
-couldn't code maternity leave for France, I need CONGMATPAR at 2 months and 1 year
+## Problem: couldn't code maternity leave for France, I need CONGMATPAR at 2 months and 1 year
 
-Elfe data restructured: what a mess for data users
+## Elfe data restructured: what a mess for data users
+
+# 23 june 2025
+
+## Role modelling: coded who does chores, including with 3 categories variables:
+1 mother does it
+2 balanced
+3 father does it
+
+Matching variables in Elfe and MCS!
+
+Add division of labour outside the home?
+Add age 1 variables for Elfe?
+
+## Attitudes expectations: not matching, not sure how to compare MCS and Elfe variables...
+coded as dummy variables mostly
+
+## Cleaned the variables script more, listing the variables I've created as I go
+
+## Children's access to resources: MCS done pretty much, started Elfe
