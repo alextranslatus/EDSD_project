@@ -5,7 +5,7 @@ for(
     "haven", # read dta
     "readxl", # read xlsx
     "dplyr", # basics
-    "data.table" # data.table
+    "data.table" # data.table 
   )
 ){
   if(!require(pkg, quietly = TRUE, character.only = TRUE)){
