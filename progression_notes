@@ -1,42 +1,60 @@
 
-# 18 june 2025
+18 june 2025 -------------------------------------------------------------------
 
-## Set up github repository
+Set up github repository
 
-## Coded weights, child sex, mothers' education
+Coded weights, child sex, mothers' education
 
-## Problem: couldn't code maternity leave for France, I need CONGMATPAR at 2 months and 1 year
+Problem: couldn't code maternity leave for France, I need CONGMATPAR at 2 months and 1 year
 
-## Elfe data restructured: what a mess for data users
+Elfe data restructured: what a mess for data users
 
-# 23 june 2025
+23 june 2025 -------------------------------------------------------------------
 
-## Role modelling: coded who does chores, including with 3 categories variables:
-1 mother does it
-2 balanced
-3 father does it
+Role modelling: coded who does chores, including with 3 categories variables:
+      
+      1 mother does it
+      2 balanced
+      3 father does it
+      
+      Matching variables in Elfe and MCS!
+      
+      Add division of labour outside the home? -> started working on this 24 june
+      
+      Add age 1 variables for Elfe?
 
-Matching variables in Elfe and MCS!
-
-Add division of labour outside the home? -> started working on this 24 june
-Add age 1 variables for Elfe?
-
-## Attitudes expectations: not matching, not sure how to compare MCS and Elfe variables...
+Attitudes expectations: not matching, not sure how to compare MCS and Elfe variables...
 coded as dummy variables mostly
 
-## Cleaned the variables script more, listing the variables I've created as I go
+Cleaned the variables script more, listing the variables I've created as I go
 
-## Children's access to resources: MCS done pretty much, started Elfe
+Children's access to resources: MCS done pretty much, started Elfe
 
-# 24 june 2025
+24 june 2025 -------------------------------------------------------------------
 
-## If variables available in multiple waves, which do I choose?
+If variables available in multiple waves, which do I choose?
 
-## Coded parents' employment, part-time work in Elfe
-## Coding parents' reason for part-time work in Elfe (start again here)
-## Missing variables for coding maternity (etc) leave in Elfe
+Coded parents' employment, part-time work in Elfe
+Coding parents' reason for part-time work in Elfe (start again here)
+Missing variables for coding maternity (etc) leave in Elfe
 
-## Coded children's hobbies in clubs in Elfe
+Coded children's hobbies in clubs in Elfe
 
+25 june 2025 -------------------------------------------------------------------
 
+Finished coding parents' reason for part-time work in Elfe
 
+Sent email for missing variables for coding maternity (etc) leave in Elfe
+
+Realised there might be a SLIGHT problem when I structure the MCS data:
+
+      28 mothers are partner respondents, 7 fathers are main respondents:
+      will need to fix this in clean_mcs scripts, shouldn't be an issue, but better to fix it
+      fix by adding condition that _m needs to be ADDRES00 = 1, and _p ADDRES00 = 2
+      maybe find how to redistribute the mother partner interview as _m
+      and the father main interview as _p,
+      because right now, 28 _p's are actually mothers and 7 _m's are actually fathers
+      eg. matters when coding the DCWRK00 work variables
+      
+      
+      

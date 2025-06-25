@@ -82,9 +82,11 @@ mcs[, sex:= AHCSEX00]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
+                    
                     "sex")  # 1 = "Male", 2 = "Female"
 
 mcs_variables <- c(mcs_variables, 
+                   
                    "sex")  # 1 = "Male", 2 = "Female"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,12 +96,12 @@ mcs_variables <- c(mcs_variables,
 # Elfe
 
 # Use info from the earlier wave possible: if info missing at 2m, take available info at 1y, etc.
-elfe[, meducaf_imp := fcoalesce(meducaf_2m, meducaf_1y, meducaf_2y, meducaf_3y)]
+elfe[, meducaf_imp:= fcoalesce(meducaf_2m, meducaf_1y, meducaf_2y, meducaf_3y)]
 
 # Three groups
-elfe[meduc %in% c(1, 2, 3), meduc3 := 1]  # Up to and including bac
-elfe[meduc == 4,            meduc3 := 2]  # Bac +2 (consider including bac if desired)
-elfe[meduc %in% c(5, 6),    meduc3 := 3]  # Higher than bac +2
+elfe[meduc %in% c(1, 2, 3), meduc3:= 1]  # Up to and including bac
+elfe[meduc == 4,            meduc3:= 2]  # Bac +2 (consider including bac if desired)
+elfe[meduc %in% c(5, 6),    meduc3:= 3]  # Higher than bac +2
  
 # MCS
 
@@ -125,11 +127,15 @@ mcs[meduc == 1 & APLFTE00_m > 16 & !is.na(APLFTE00_m), meduc3:= 2]
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
+                    
                     "meduc3", # 1 = "Low", 2 = "Medium", 3 = "High"
+                    
                     "meduc")  # 1 = "<=bepc",  2 = "cap-bep", 3 = "bac", 4 = "bac+2", 5 = "bac+3/4", 6 = ">bac+4"
 
 mcs_variables <- c(mcs_variables,
+                   
                    "meduc3", # 1 = "Low", 2 = "Medium", 3 = "High"
+                   
                    "meduc")  # 1 = "None", 2 = "Other", 3 = "GCSE D-G", 4 = "GCSE A-C", 5 = "Trade", 6 = "A-level", 7 = "HE below deg", 8 = "Bach", 9 = "Higher deg"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,6 +143,8 @@ mcs_variables <- c(mcs_variables,
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Elfe
+
+# Who does what?
 
 tasks <- list(
   nappies2m = c("M02M_CHANGB", "M02P_CHANGB"),
@@ -157,20 +165,19 @@ for (task in names(tasks)) {
   m_col <- tasks[[task]][1]
   p_col <- tasks[[task]][2]
   
-  elfe[, (task) := get(m_col)]
-  elfe[is.na(get(task)) & !(get(p_col) %in% c(6, 7)), (task) := 6 - get(p_col)]
-  elfe[is.na(get(task)) | get(task) %in% c(6, 7), (task) := NA]
+  elfe[, (task):= get(m_col)]
+  elfe[is.na(get(task)) & !(get(p_col) %in% c(6, 7)), (task):= 6 - get(p_col)]
+  elfe[is.na(get(task)) | get(task) %in% c(6, 7), (task):= NA]
   
-  elfe[get(task) %in% c(1, 2), paste0((task), 3)  := 1]
-  elfe[get(task) == 3, paste0((task), 3)  := 2]
-  elfe[get(task) %in% c(4, 5), paste0((task), 3)  := 3]
+  elfe[get(task) %in% c(1, 2), paste0((task), 3) := 1]
+  elfe[get(task) == 3, paste0((task), 3) := 2]
+  elfe[get(task) %in% c(4, 5), paste0((task), 3) := 3]
 }
 
-# Congé mat/pat/parent
+# Maternity leave
 
-# elfe[, congmat2m := ifelse(M02M_CONGMAT == 1 | M02M_CONGMATPAR %in% c(1, 2), 1, 0)]
-# missing variable
-elfe[, congpat2m := ifelse(M02M_CONGPAT %in% c(1, 2), 1, 0)]
+# elfe[, congmat2m:= ifelse(M02M_CONGMAT == 1 | M02M_CONGMATPAR %in% c(1, 2), 1, 0)]
+# elfe[, congpat2m:= ifelse(M02M_CONGPAT %in% c(1, 2), 1, 0)]
 
 # Who's working? Mother, father, both, neither?
 time_points <- c("2m", "1y", "2y", "3y", "5y")
@@ -180,10 +187,10 @@ for (tp in time_points) {
   father_var <- paste0("father_occup_status_", tp)
   emp_var    <- paste0("emp", tp)
   
-  elfe[get(mother_var) %in% c(1, 4) & get(father_var) %in% c(1, 4), (emp_var) := 1]
-  elfe[get(mother_var) %in% c(2, 3) & get(father_var) %in% c(1, 4), (emp_var) := 2]
-  elfe[get(mother_var) %in% c(1, 4) & get(father_var) %in% c(2, 3), (emp_var) := 3]
-  elfe[get(mother_var) %in% c(2, 3) & get(father_var) %in% c(2, 3), (emp_var) := 4]
+  elfe[get(mother_var) %in% c(1, 4) & get(father_var) %in% c(1, 4), (emp_var):= 1]
+  elfe[get(mother_var) %in% c(2, 3) & get(father_var) %in% c(1, 4), (emp_var):= 2]
+  elfe[get(mother_var) %in% c(1, 4) & get(father_var) %in% c(2, 3), (emp_var):= 3]
+  elfe[get(mother_var) %in% c(2, 3) & get(father_var) %in% c(2, 3), (emp_var):= 4]
 }
 
 # Part-time?
@@ -197,7 +204,7 @@ for (i in 4:12) {
   empltx  <- paste0("M02M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp2m == 0,
-       mpartemp2m := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp2m:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:12) {
@@ -205,7 +212,7 @@ for (i in 3:12) {
   empltx  <- paste0("M02P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp2m == 0,
-       mpartemp2m := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp2m:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 2m father
@@ -217,7 +224,7 @@ for (i in 4:12) {
   empltx  <- paste0("M02M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp2m == 0,
-       fpartemp2m := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp2m:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:12) {
@@ -225,7 +232,7 @@ for (i in 3:12) {
   empltx  <- paste0("M02P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp2m == 0,
-       fpartemp2m := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp2m:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 
@@ -238,7 +245,7 @@ for (i in 4:15) {
   empltx  <- paste0("A01M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp1y == 0,
-       mpartemp1y := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp1y:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:15) {
@@ -246,7 +253,7 @@ for (i in 3:15) {
   empltx  <- paste0("A01P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp1y == 0,
-       mpartemp1y := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp1y:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 1y father
@@ -258,7 +265,7 @@ for (i in 4:15) {
   empltx  <- paste0("A01M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp1y == 0,
-       fpartemp1y := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp1y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:15) {
@@ -266,7 +273,7 @@ for (i in 3:15) {
   empltx  <- paste0("A01P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp1y == 0,
-       fpartemp1y := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp1y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 2y mother
@@ -278,7 +285,7 @@ for (i in 4:20) {
   empltx  <- paste0("A02M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp2y == 0,
-       mpartemp2y := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp2y:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:20) {
@@ -286,7 +293,7 @@ for (i in 3:20) {
   empltx  <- paste0("A02P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp2y == 0,
-       mpartemp2y := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp2y:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 2y father
@@ -298,7 +305,7 @@ for (i in 4:15) {
   empltx  <- paste0("A02M_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp2y == 0,
-       fpartemp2y := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp2y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 for (i in 3:15) {
@@ -306,7 +313,7 @@ for (i in 3:15) {
   empltx  <- paste0("A02P_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp2y == 0,
-       fpartemp2y := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp2y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 3y mother
@@ -318,7 +325,7 @@ for (i in 4:20) {
   empltx  <- paste0("A03R_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & mpartemp3y == 0,
-       mpartemp3y := ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
+       mpartemp3y:= ifelse(get(lientyp) == 2 & get(empltx) %in% 1:100, 1, 0)]
 }
 
 # 3y father
@@ -330,17 +337,17 @@ for (i in 4:20) {
   empltx  <- paste0("A03R_EMPLTX_", i)
   
   elfe[!is.na(get(lientyp)) & fpartemp3y == 0,
-       fpartemp3y := ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
+       fpartemp3y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
-
-
 
 # Part time to take care of kids and home
 
-# 2m mothers  OK
+# 2m mothers
+
+table(elfe$mpartkids2m)
 
 elfe[M02M_LIENTYP_3 == 2 & M02M_EMPLTX_3 %in% 1:100, 
-     mpartkids2m := ifelse(M02M_PQPART_3 %in% c(4, 5), 1, 0)]
+     mpartkids2m:= ifelse(M02M_PQPART_3 %in% c(4, 5), 1, 0)]
 
 for (i in 3:12) {
   lientyp_col <- paste0("M02P_LIENTYP_", i)
@@ -348,25 +355,105 @@ for (i in 3:12) {
   pqpart_col  <- paste0("M02P_PQPART_", i)
   
   elfe[get(lientyp_col) == 2 & get(empltx_col) %in% 1:100 & is.na(mpartkids2m),
-       mpartkids2m := ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+       mpartkids2m:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
 }
 
-# 2m fathers PAS OK
+# 2m fathers
 
 elfe[M02M_LIENTYP_4 == 1 & M02M_EMPLTX_4 %in% 1:100, 
-     fpartkids2m := ifelse(M02M_PQPART_4 %in% c(4, 5), 1, 0)]
+     fpartkids2m:= ifelse(M02M_PQPART_4 %in% c(4, 5), 1, 0)]
 
-elfe[M02P_LIENTYP_4 == 1 & M02P_EMPLTX_4 %in% 1:100, 
-     fpartkids2m := ifelse(M02P_PQPART_4 %in% c(4, 5), 1, 0)]
+elfe[M02P_LIENTYP_4 == 1 & M02P_EMPLTX_4 %in% 1:100 & is.na(fpartkids2m), 
+     fpartkids2m:= ifelse(M02P_PQPART_4 %in% c(4, 5), 1, 0)]
 
-for (i in 3:12) {
-  lientyp_col <- paste0("M02P_LIENTYP_", i)
-  empltx_col  <- paste0("M02P_EMPLTX_", i)
-  pqpart_col  <- paste0("M02P_PQPART_", i)
+# 1y mothers
+
+elfe[A01M_LIENTYP_3 == 2 & A01M_EMPLTX_3 %in% 1:100, 
+     mpartkids1y:= ifelse(A01M_PQPART_3 %in% c(4, 5), 1, 0)]
+
+for (i in 3:15) {
+  lientyp_col <- paste0("A01P_LIENTYP_", i)
+  empltx_col  <- paste0("A01P_EMPLTX_", i)
+  pqpart_col  <- paste0("A01P_PQPART_", i)
   
-  elfe[get(lientyp_col) == 1 & get(empltx_col) %in% 1:100 & is.na(fpartkids2m),
-       fpartkids2m := ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+  elfe[get(lientyp_col) == 2 & get(empltx_col) %in% 1:100 & is.na(mpartkids1y),
+       mpartkids1y:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
 }
+
+# 1y fathers
+
+elfe[A01M_LIENTYP_4 == 1 & A01M_EMPLTX_4 %in% 1:100, 
+     fpartkids1y:= ifelse(A01M_PQPART_4 %in% c(4, 5), 1, 0)]
+
+for (i in 5:15) {
+  lientyp_col <- paste0("A01P_LIENTYP_", i)
+  empltx_col  <- paste0("A01P_EMPLTX_", i)
+  pqpart_col  <- paste0("A01P_PQPART_", i)
+  
+  elfe[get(lientyp_col) == 1 & get(empltx_col) %in% 1:100 & is.na(fpartkids1y),
+       fpartkids1y:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+}
+
+# 2y mothers
+
+elfe[A02M_LIENTYP_3 == 2 & A02M_EMPLTX_3 %in% 1:100, 
+     mpartkids2y:= ifelse(A02M_PQPART_3 %in% c(4, 5), 1, 0)]
+
+for (i in 3:20) {
+  lientyp_col <- paste0("A02P_LIENTYP_", i)
+  empltx_col  <- paste0("A02P_EMPLTX_", i)
+  pqpart_col  <- paste0("A02P_PQPART_", i)
+  
+  elfe[get(lientyp_col) == 2 & get(empltx_col) %in% 1:100 & is.na(mpartkids2y),
+       mpartkids2y:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+}
+
+# 2y fathers
+
+elfe[A02M_LIENTYP_4 == 1 & A02M_EMPLTX_4 %in% 1:100, 
+     fpartkids2y:= ifelse(A02M_PQPART_4 %in% c(4, 5), 1, 0)]
+
+for (i in 5:20) {
+  lientyp_col <- paste0("A02P_LIENTYP_", i)
+  empltx_col  <- paste0("A02P_EMPLTX_", i)
+  pqpart_col  <- paste0("A02P_PQPART_", i)
+  
+  elfe[get(lientyp_col) == 1 & get(empltx_col) %in% 1:100 & is.na(fpartkids2y),
+       fpartkids2y:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+}
+
+
+# 3y mothers
+
+elfe[A03R_LIENTYP_3 == 2 & A03R_EMPLTX_3 %in% 1:100, 
+     mpartkids3y:= ifelse(A03R_PQPART_3 %in% c(4, 5), 1, 0)]
+
+for (i in 4:20) {
+  lientyp_col <- paste0("A03R_LIENTYP_", i)
+  empltx_col  <- paste0("A03R_EMPLTX_", i)
+  pqpart_col  <- paste0("A03R_PQPART_", i)
+  
+  elfe[get(lientyp_col) == 2 & get(empltx_col) %in% 1:100 & is.na(mpartkids3y),
+       mpartkids3y:= ifelse(get(pqpart_col) %in% c(4, 5), 1, 0)]
+}
+
+# 3y fathers
+
+elfe[A03R_LIENTYP_4 == 1 & A03R_EMPLTX_4 %in% 1:100, 
+     fpartkids3y:= ifelse(A03R_PQPART_4 %in% c(4, 5), 1, 0)]
+
+for (i in 3:20) {
+  lientyp_col <- paste0("A03R_LIENTYP_", i)
+  empltx_col  <- paste0("A03R_EMPLTX_", i)
+  pqpart_col  <- paste0("A03R_PQPART_", i)
+  
+  elfe[get(lientyp_col) == 1 & get(empltx_col) %in% 1:100 & is.na(fpartkids3y),
+       fpartkids3y:= ifelse(get(pqpart_col) %in% c(4, 5), 1L, 0L)]
+}
+
+elfe$fpartkids3y <- as.numeric(elfe$fpartkids3y)
+
+
 
 
 
@@ -374,6 +461,8 @@ for (i in 3:12) {
 
 
 # MCS 
+
+# Who does what?
 
 tasks <- c(
   nappies9m3 = "APCHNA00_m",
@@ -389,28 +478,84 @@ tasks <- c(
 
 for (new_var in names(tasks)) {
   source_var <- tasks[[new_var]]
-  mcs[get(source_var) %in% c(1, 2, 3), (new_var) := get(source_var)]
+  mcs[get(source_var) %in% c(1, 2, 3), (new_var):= get(source_var)]
 }
+
+# Maternity/paternity leave
+
+
+
+# APMACT00 = 2 or 5 (houseparent)
+# 
+# APPLEA00 = 1 and APLEWT0A (to D) = 1 or 2 
+# 
+# BHFEAC00 = 2 or 5
+# BPAWWY00 = 1 2 or 3
+# BPPARL00 = 1
+# BPMATB00 = 1
+# 
+# CPAWWY00 = 1 2 or 3
+# CPPARL00 = 1
+
+# Who's working? Mother, father, both, neither?
+
+mcs[ADCWRK00 == 1, emp9m:= 1]
+mcs[ADCWRK00 == 2, emp9m:= 3]
+mcs[ADCWRK00 == 3, emp9m:= 2]
+mcs[ADCWRK00 == 4, emp9m:= 4]
+
+mcs[BDCWRK00 == 1, emp3y:= 1]
+mcs[BDCWRK00 == 2, emp3y:= 3]
+mcs[BDCWRK00 == 3, emp3y:= 2]
+mcs[BDCWRK00 == 4, emp3y:= 4]
+
+mcs[CDCWRK00 == 1, emp5y:= 1]
+mcs[CDCWRK00 == 2, emp5y:= 3]
+mcs[CDCWRK00 == 3, emp5y:= 2]
+mcs[CDCWRK00 == 4, emp5y:= 4]
+
+
+
+
+# (-9.0) Refusal (-8.0) Don't Know      (-1.0) Not applicable  (1.0) Both in work    (2.0) Main in work, partner not    
+# (3.0) Partner in work, main not       (4.0) Both not in work        (5.0) Main in work or on leave, no partner   
+# (6.0) Main not on work nor on leave, no partner       (7.0) Main work status unknown, partner in work    
+# (8.0) Main work status unknown, partner not in work   (9.0) Main in work, partner status unknown   
+# (10.0) Main not in work, partner status unknown        (11.0) Main working status unknown, no partner
+
+# Part time?
+
+
+# Part-time?
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
+                    
                     "nappies2m", "tuckin2m", "bath2m", "walk2m", "night2m", "doctor2m", "dishes2m", "groceries2m", "cook2m", "laundry2m", "clean2m", "diy2m", 
                     # Who does what? 1 = "Always the mother", 2 = "Most often the mother", 3 = "Both", 4 = "Most often the father", 5 = "Always the father"
                     
                     "nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3",
                     # Who does what (3 categories)? 1 = "Mother mostly", 2 = "Balanced, 3 = "Father mostly"
                     
-                    "emp2m", "emp1y", "emp1y", "emp1y", "emp1y",
-                    # Who's working? 1 = "Both parents, 2 = "Father only", 3 = "Mother only", 4 = "Neither"
+                    "emp2m", "emp1y", "emp2y", "emp3y", "emp5y",
+                    # Who's working? 1 = "Both parents", 2 = "Father only", 3 = "Mother only", 4 = "Neither"
                     
-                    "mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y"
-                    ) # Part-time: 1 = "Yes", 2 = "No"
+                    "mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y",
+                    # Part-time: 1 = "Yes", 0 = "No"
+                    
+                    "mpartkids2m", "fpartkids2m", "mpartkids1y", "fpartkids1y", "mpartkids2y", "fpartkids2y", "mpartkids3y", "fpartkids3y"
+                    ) # Part-time to be with kids or at home: 1 = "Yes", 0 = "No"
 
 mcs_variables <- c(mcs_variables,
-                   "nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3"
-                   ) # Who does what (3 categories)? 1 = "Mother mostly", 2 = "Balanced, 3 = "Father mostly"
-
+                   
+                   "nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3",
+                   # Who does what (3 categories)? 1 = "Mother mostly", 2 = "Balanced, 3 = "Father mostly"
+                   
+                   "emp9m", "emp3y", "emp5y"
+                   # Who's working? 1 = "Both parents", 2 = "Father only", 3 = "Mother only", 4 = "Neither"
+                   ) 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Attitudes expectations ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -423,7 +568,7 @@ names <- c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "ca
 for (i in seq_along(values)) {
   val <- values[i]
   nm <- names[i]
-  elfe[, (nm) := ifelse(M02M_SHBB1 == val | M02M_SHBB2 == val | M02M_SHBB3 == val, 1, 0)]
+  elfe[, (nm):= ifelse(M02M_SHBB1 == val | M02M_SHBB2 == val | M02M_SHBB3 == val, 1, 0)]
 }
 
 for (v in names) print(table(elfe[[v]], useNA = "ifany"))
@@ -440,7 +585,7 @@ original_vars <- c("BPINDE00_m", "BPOBRE00_m", "BPNEGO00_m", "BPRSPE00_m", "BPWE
 new_vars <- c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y")
 
 for (i in seq_along(original_vars)) {
-  mcs[, (new_vars[i]) := ifelse(get(original_vars[i]) == 1, 1, 0)]
+  mcs[, (new_vars[i]):= ifelse(get(original_vars[i]) == 1, 1, 0)]
 }
 
 # Most important qualities
@@ -451,7 +596,7 @@ names <- c("bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obe
 for (i in seq_along(values)) {
   val <- values[i]
   nm <- names[i]
-  mcs[, (nm) := ifelse(BPQUAL00_m == val | BPSEQU00_m == val | BPTHQU00_m == val, 1, 0)]
+  mcs[, (nm):= ifelse(BPQUAL00_m == val | BPSEQU00_m == val | BPTHQU00_m == val, 1, 0)]
 }
 
 for (v in names) print(table(mcs[[v]], useNA = "ifany"))
@@ -459,14 +604,17 @@ for (v in names) print(table(mcs[[v]], useNA = "ifany"))
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
+                    
                     "socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m"
-                    ) # Wish for the child, cited? 1 = "Yes", 0 = "No
+                    ) # Wish for the child, cited? 1 = "Yes", 0 = "No"
 
 mcs_variables <- c(mcs_variables,
+                   
                    "independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y", 
-                   # Values to instill, cited? 1 = "Yes", 0 = "No
+                   # Values to instill, cited? 1 = "Yes", 0 = "No"
+                   
                    "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y"
-                   ) # Most important qualities, cited? 1 = "Yes", 0 = "No
+                   ) # Most important qualities, cited? 1 = "Yes", 0 = "No"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Children's access to resources ####
@@ -480,7 +628,7 @@ activity_vars <- paste0("A03R_ACT", 1:7)
 activity_names <- c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y")
 
 for (i in seq_along(activity_vars)) {
-  elfe[, (activity_names[i]) := ifelse(get(activity_vars[i]) == 1, 1, 0)]
+  elfe[, (activity_names[i]):= ifelse(get(activity_vars[i]) == 1, 1, 0)]
 }
 
 # Extra activities
@@ -489,7 +637,7 @@ extra_vars <- paste0("A03R_ACEXTRASCP", 1:8)
 extra_names <- c("swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")
 
 for (i in seq_along(extra_vars)) {
-  elfe[, (extra_names[i]) := ifelse(get(extra_vars[i]) == 1, 1, 0)]
+  elfe[, (extra_names[i]):= ifelse(get(extra_vars[i]) == 1, 1, 0)]
 }
 
 # MCS
@@ -505,8 +653,8 @@ for (i in seq_along(vars)) {
   p_var <- p_vars[i]
   new_var <- vars[i]
   
-  mcs[, (new_var) := ifelse(get(m_var) == 1, 1, 0)]
-  mcs[is.na(get(new_var)), (new_var) := ifelse(get(p_var) == 1, 1, 0)]
+  mcs[, (new_var):= ifelse(get(m_var) == 1, 1, 0)]
+  mcs[is.na(get(new_var)), (new_var):= ifelse(get(p_var) == 1, 1, 0)]
 }
 
 vars <- c("fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y")
@@ -518,8 +666,8 @@ for (i in seq_along(vars)) {
   p_var <- p_vars[i]
   new_var <- vars[i]
   
-  mcs[, (new_var) := ifelse(get(m_var) > 0, get(m_var), NA)]
-  mcs[is.na(get(new_var)), (new_var) := ifelse(get(p_var) > 0, get(p_var), NA)]
+  mcs[, (new_var):= ifelse(get(m_var) > 0, get(m_var), NA)]
+  mcs[is.na(get(new_var)), (new_var):= ifelse(get(p_var) > 0, get(p_var), NA)]
 }
 
 # age 5
@@ -533,21 +681,24 @@ for (i in seq_along(vars)) {
   p_var <- p_vars[i]
   new_var <- vars[i]
   
-  mcs[, (new_var) := ifelse(get(m_var) > 0, get(m_var), NA)]
-  mcs[is.na(get(new_var)), (new_var) := ifelse(get(p_var) > 0, get(p_var), NA)]
+  mcs[, (new_var):= ifelse(get(m_var) > 0, get(m_var), NA)]
+  mcs[is.na(get(new_var)), (new_var):= ifelse(get(p_var) > 0, get(p_var), NA)]
 }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
+                    
                     "paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y",
                     # Parent-child activities: 1 = "Yes", 0 = "No"
+                    
                     "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y"
                     ) # child's activities in clubs: 1 = "Yes", 0 = "No"
 
 mcs_variables <- c(mcs_variables,
+                   
                    "physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y",
-                   # anyone does this with child? 1 = "Yes", 0 = "No",
+                   # anyone does this with child? 1 = "Yes", 0 = "No"
                    
                    "fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y",
                    # how often? 1 = "Occasionally or less than once a week", 2 = "1 - 2 days per week", 3 = "3 times a week", 4 = "4 times a week", 5 = "5 times a week", 6 = "6 times a week", 7 = "7 times a week constantly"

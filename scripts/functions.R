@@ -214,8 +214,6 @@ combine <- function(mothervar, fathervar, combvar) {
   return(elfe)
 }
 
-library(dplyr)
-
 tabulate_with_labels <- function(vars, data, labels_list, names_list) {
   results <- list()
   
