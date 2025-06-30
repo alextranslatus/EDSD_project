@@ -13,7 +13,8 @@ for(
   }
 }
 
-# Loading Elfe
+# Loading Elfe 
+
 elfe <- read_csv("data/20250610DEM_1066_LP/DATA_DEM_1066_LP.csv")
 dict_elfe <- read_delim("data/20250610DEM_1066_LP/CCT_DEM_1066_LP.csv", 
                         delim = ";", escape_double = FALSE, trim_ws = TRUE)
