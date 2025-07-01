@@ -56,5 +56,72 @@ Realised there might be a SLIGHT problem when I structure the MCS data:
       because right now, 28 _p's are actually mothers and 7 _m's are actually fathers
       eg. matters when coding the DCWRK00 work variables 
       
+30 june 2025 -------------------------------------------------------------------
+
+How do I work with family structure?
+
+      For example: for work status, whose status matters? both parents? the ones 
+      living with the child?
       
+Coded work status of parents for MCS: I ignored the items in the questionnaire for 
+which the work status was unknown for the main parent
+MCS had a contructed variable with more options than the ELFE variable: in 
+particular MCS had options for mothers with no partner
+
+Also, coding part time work: should I keep an NA for people who don't have jobs?
+Should probably, but that would reduce the sample size... Keep an option 2 = no job?
+Done
+
+1 july 2025 -------------------------------------------------------------------
+
+Spent a lot of time on maternity etc leave. Conclusion: probably should look at
+length of leave for both parents. I think in MCS it's sort of assumed that all
+mothers take leave, it's more about how long and paid how. In elfe, we have info
+on length of maternity leave at 2 months only, which is weird, it's like an idea
+of how long it'll be? But then in subsequent surveys, I can keep checking if
+they've changed plans and are still on leave.
+
+        For fathers: in MCS, it's weird how many fathers say they've been on leave
+        again, should I focus on length?
+        
+        I'll finish coding this variable when I have the complete elfe data
+
+For some reason, 
+> elfe[, wgt2m:= M02E_PONDREF]
+Error in eval(jsub, SDenv, parent.frame()) : 
+  object 'M02E_PONDREF' not found
+
+while the rest is fine:
+> elfe[, wgt1y:= A01E_PONDREF]
+> elfe[, wgt2y:= A02E_PONDREF]
+> elfe[, wgt3y:= A03E_PONDREF]
+> elfe[, wgt5y:= A05E_PONDREF]
+
+Started the 2_desc document to get summary statistics for both countries
+
+Need family structure as a variable: done
+
+Started coding the summary statistics
+
+Fix the MCS weights/present in waves variables
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       

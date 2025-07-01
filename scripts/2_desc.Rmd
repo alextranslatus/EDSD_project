@@ -1,0 +1,202 @@
+---
+title: "Descriptive statistics"
+author: "Alex Sheridan"
+date: "2025-07-01"
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+for(
+  pkg in c(
+    "ggplot2", # graphs
+    "dplyr", # basics
+    "tidyr", # basics
+    "survey", # survey weights
+    "gtsummary", # summary tables
+    "kableExtra", # styling of tables
+    "kable",
+    "beepr", # helps save time
+    "stringr", # in pivoting: separate the suffix to get variables per year
+    "data.table" # data.table 
+  )
+){
+  if(!require(pkg, quietly = TRUE, character.only = TRUE)){
+    install.packages(pkg)
+  }
+}
+
+# Functions ####
+source("scripts/0_functions.R")
+
+# Data ####
+load(file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/elfemini.Rdata")
+load(file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/mcsmini.Rdata")
+
+elfemini <- elfemini %>%
+  mutate(across(-c(wgt1y, wgt2y, wgt3y, wgt5y), as.factor))
+
+mcsmini <- mcsmini %>%
+  mutate(across(-c(wgt9m, wgt3y, wgt5y), as.factor))
+
+for(i in c("sex")) {
+  levels(elfemini[, i]) <- c("Male", "Female")
+}
+
+for(i in c("sex")) {
+  levels(mcsmini[, i]) <- c("Male", "Female")
+}
+
+for(i in c("meduc3")) {
+  levels(elfemini[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc3")) {
+  levels(mcsmini[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc")) {
+  levels(elfemini[, i]) <- c("<=bepc",  "cap-bep", "bac", "bac+2", "bac+3/4", ">bac+4")
+}
+
+for(i in c("meduc")) {
+  levels(mcsmini[, i]) <- c("None", "Other", "GCSE D-G", "GCSE A-C", "Trade", "A-level", "HE below deg", "Bach", "Higher deg")
+}
+
+for(i in c("famstr2m", "famstr1y", "famstr2y", "famstr3y", "famstr5y")) {
+  levels(elfemini[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("famstr9m", "famstr3y", "famstr5y")) {
+  levels(mcsmini[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("twopar2m", "twopar1y", "twopar2y", "twopar3y", "twopar5y")) {
+  levels(elfemini[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar9m", "twopar3y", "twopar5y")) {
+  levels(mcsmini[, i]) <- c("No", "Yes")
+}
+
+# Role modelling ####
+
+
+for(i in c("nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3")) {
+  levels(elfemini[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3")) {
+  levels(mcsmini[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("emp2m", "emp1y", "emp2y", "emp3y", "emp5y")) {
+  levels(elfemini[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp9m", "emp3y")) {
+  levels(mcsmini[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y")) {
+  levels(elfemini[, i]) <- c("No", "Yes")
+}
+
+for(i in c("mpartemp9m", "fpartemp9m", "mpartemp3y")) {
+  levels(mcsmini[, i]) <- c("No", "Yes")
+}
+
+# Attitudes expectations ####
+
+for(i in c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m")) {
+  levels(elfemini[, i]) <- c("No", "Yes")
+}
+
+for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y",
+           "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y")) {
+  levels(mcsmini[, i]) <- c("No", "Yes")
+}
+
+# Children's access to resources ####
+
+for(i in c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y", 
+          "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
+  levels(elfemini[, i]) <- c("No", "Yes")
+}
+
+for(i in c("physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y")) {
+  levels(mcsmini[, i]) <- c("No", "Yes")
+}
+
+for(i in c("fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y")) {
+  levels(mcsmini[, i]) <- c("Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
+}
+
+for(i in c("fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcsmini[, i]) <- c("Every day", "Several times a week", "Once or twice a week", "Once or twice a month", "Less often", "Not at all")
+}
+
+elfe5 <- elfemini %>%
+  drop_na(wgt5y)
+welfe5 <- svydesign(ids = ~1, data = elfe5, weights = ~ elfe5$wgt5y)
+
+mcs5 <- mcsmini %>%
+  filter(inwave5y == 1)
+wmcs5 <- svydesign(ids = ~1, data = mcs5, weights = ~ mcs5$wgt5y)
+
+
+```
+
+
+# Gender, education variables
+
+```{r}
+
+welfe5 %>% tbl_svysummary(include = c("sex",
+                                      "meduc",
+                                      "meduc3"),
+                              label = list(sex ~ "Child's sex",
+                                           meduc ~ "Mother's education",
+                                           meduc3 ~ "Mother's education (3 cat)"),
+                              statistic = all_categorical() ~ c("{n_unweighted} ({p}%)"),
+                              digits = list( ~ c(0, 1)),
+                              missing = "no") %>%
+  modify_header(label = "**Variable**", all_stat_cols() ~ "**All**, N = {n_unweighted}") %>%
+  add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
+  modify_caption("Variables at 1 year old in France") %>%
+  as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))
+
+
+
+
+# Reshape and prepare data
+long_data <- mcs5 %>%
+  select(famstr9m, famstr3y, famstr5y) %>%
+  pivot_longer(cols = everything(), 
+               names_to = "time_point", 
+               values_to = "family_structure") %>%
+  mutate(time = factor(str_extract(time_point, "\\d+[my]"), levels = c("5y", "3y", "9m")))
+
+# Calculate percentages
+percent_data <- long_data %>%
+  group_by(time, family_structure) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(time) %>%
+  mutate(percent = n / sum(n))
+
+# Plot
+ggplot(percent_data, aes(x = time, y = percent, fill = family_structure)) +
+  geom_bar(stat = "identity", position = "stack") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(title = "Family Structure",
+       x = "Wave",
+       y = "Percentage",
+       fill = "Family Structure") +
+  theme_minimal()
+```
+

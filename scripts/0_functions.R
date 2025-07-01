@@ -505,3 +505,28 @@ ses_elfeanova <- function(variables, data = elfe, group_var = "M02X_PCS08_MERE",
   return(summary_result)
 }
 
+
+# table(mcs$variable, useNA = "always")
+
+tabm <- function(x) {
+  table(mcs[[deparse(substitute(x))]], useNA = "always")
+}
+
+
+# table(elfe$variable, useNA = "always")
+
+tabe <- function(x) {
+  table(elfe[[deparse(substitute(x))]], useNA = "always")
+}
+
+
+
+
+
+
+
+
+
+
+
+
