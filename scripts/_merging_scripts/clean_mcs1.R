@@ -4,15 +4,13 @@ library(readr)
 library(haven)
 library(beepr)
 
-setwd("/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/datamcs")
-
 rm(list = ls())
 gc()
 
 tryCatch({
   
 ### PARENT DERIVED ####
-parent_derived <- read_dta("mcs1_parent_derived.dta")
+parent_derived <- read_dta("data/datamcs/mcs1_parent_derived.dta")
 
 # Confirm that main interviewee is the mother
 table(parent_derived$AELIG00[parent_derived$ADDRES00 == 1]) # 7 main respondents are fathers
@@ -56,10 +54,10 @@ parent_derived <- parent_derived %>%
   ungroup()
 
 # Save cleaned data
-write_dta(parent_derived, "clean/mcs1_parent_derived_clean.dta")
+write_dta(parent_derived, "data/datamcs/clean/mcs1_parent_derived_clean.dta")
 
 ### PARENT INTERVIEW ####
-parent_interview <- read_dta("mcs1_parent_interview.dta")
+parent_interview <- read_dta("data/datamcs/mcs1_parent_interview.dta")
 
 parent_interview_p <- parent_interview %>% select(-MCSID) %>% rename_all(~ paste0(., "_p"))
 parent_interview_m <- parent_interview %>% rename_with(~ paste0(., "_m"), .cols = -MCSID)
@@ -74,10 +72,10 @@ parent_interview <- parent_interview %>%
   slice(1) %>%
   ungroup()
 
-write_dta(parent_interview, "clean/mcs1_parent_interview_clean.dta")
+write_dta(parent_interview, "data/datamcs/clean/mcs1_parent_interview_clean.dta")
 
 ### PARENT CM INTERVIEW ####
-parent_cm_interview <- read_dta("mcs1_parent_cm_interview.dta")
+parent_cm_interview <- read_dta("data/datamcs/mcs1_parent_cm_interview.dta")
 table(parent_cm_interview$AELIG00[parent_cm_interview$ADDRES00 == 1])
 
 parent_cm_interview_p <- parent_cm_interview %>% select(-MCSID) %>% rename_all(~ paste0(., "_p"))
@@ -93,19 +91,19 @@ parent_cm_interview <- parent_cm_interview %>%
   slice(1) %>%
   ungroup()
 
-write_dta(parent_cm_interview, "clean/mcs1_parent_cm_interview_clean.dta")
+write_dta(parent_cm_interview, "data/datamcs/clean/mcs1_parent_cm_interview_clean.dta")
 
 ### FAMILY DERIVED ####
-family_derived <- read_dta("mcs1_family_derived.dta") # one line for twins
-write_dta(family_derived, "clean/mcs1_family_derived_clean.dta")
+family_derived <- read_dta("data/datamcs/mcs1_family_derived.dta") # one line for twins
+write_dta(family_derived, "data/datamcs/clean/mcs1_family_derived_clean.dta")
 
 ### GEO LINKED DATA ####
-geographically_linked_data <- read_dta("mcs1_geographically_linked_data.dta")
+geographically_linked_data <- read_dta("data/datamcs/mcs1_geographically_linked_data.dta")
 names(geographically_linked_data) <- toupper(names(geographically_linked_data))
-write_dta(geographically_linked_data, "clean/mcs1_geographically_linked_data_clean.dta")
+write_dta(geographically_linked_data, "data/datamcs/clean/mcs1_geographically_linked_data_clean.dta")
 
 ### CM INTERVIEW ####
-cm_interview <- read_dta("mcs1_cm_interview.dta")
+cm_interview <- read_dta("data/datamcs/mcs1_cm_interview.dta")
 
 cm_interview_tw <- cm_interview %>% select(-MCSID) %>% rename_all(~ paste0(., "_tw"))
 cm_interview <- bind_cols(cm_interview, cm_interview_tw)
@@ -118,10 +116,10 @@ cm_interview <- cm_interview %>%
   slice(1) %>%
   ungroup()
 
-write_dta(cm_interview, "clean/mcs1_cm_interview_clean.dta")
+write_dta(cm_interview, "data/datamcs/clean/mcs1_cm_interview_clean.dta")
 
 ### CM DERIVED ####
-cm_derived <- read_dta("mcs1_cm_derived.dta")
+cm_derived <- read_dta("data/datamcs/mcs1_cm_derived.dta")
 
 cm_derived_tw <- cm_derived %>% select(-MCSID) %>% rename_all(~ paste0(., "_tw"))
 cm_derived <- bind_cols(cm_derived, cm_derived_tw)
@@ -134,60 +132,16 @@ cm_derived <- cm_derived %>%
   slice(1) %>%
   ungroup()
 
-write_dta(cm_derived, "clean/mcs1_cm_derived_clean.dta")
-
-# ### HHGRID ###
-# hh_grid <- read_dta("mcs1_hhgrid.dta")
-# 
-# hh_grid <- hh_grid %>%
-#   mutate(momotherkids = ifelse(ahcrel == 11, 1, 0)) %>%
-#   group_by(mcsid) %>%
-#   mutate(momotherkids = max(momotherkids, na.rm = TRUE)) %>%
-#   ungroup()
-# 
-# # Gender variable
-# hh_grid <- hh_grid %>%
-#   mutate(male = ifelse(ahcsex00 == 1, 1, 0)) %>%
-#   group_by(mcsid) %>%
-#   mutate(male = max(male, na.rm = TRUE)) %>%
-#   ungroup()
-# 
-# # Keep main respondent and partner
-# hh_grid <- hh_grid %>% filter(aelig == 1 | aelig == 2)
-# 
-# # Duplicate all variables for second parent
-# hh_grid_p <- hh_grid %>% select(apnum00:ahinca00) %>% rename_all(~ paste0(., "_p"))
-# hh_grid <- bind_cols(hh_grid, hh_grid_p)
-# 
-# # Make first set valid for first parent, second for partner
-# hh_grid <- hh_grid %>%
-#   mutate(across(apnum00:ahinca00, ~ ifelse(aelig00 != 1, NA, .))) %>%
-#   mutate(across(ends_with("_p"), ~ ifelse(aelig00 == 1, NA, .)))
-# 
-# # Pull partner values into first record
-# hh_grid <- hh_grid %>%
-#   group_by(mcsid) %>%
-#   mutate(across(ends_with("_p"), ~ ifelse(is.na(.), lead(.), .))) %>%
-#   ungroup()
-# 
-# # Keep only first record per mcsid
-# hh_grid <- hh_grid %>% group_by(mcsid) %>% slice(1) %>% ungroup()
-# 
-# # Save cleaned data
-# write_dta(hh_grid, "mcs_cm_hhgrid_clean.dta")
-
-# # Convert strings to numeric
-# parent_interview <- parent_interview %>%
-#   mutate(across(where(is.character), ~ as.numeric(as.character(.)), .names = "{.col}_num"))
+write_dta(cm_derived, "data/datamcs/clean/mcs1_cm_derived_clean.dta")
 
 ### MERGE FILES ####
-parent_derived <- read_dta("clean/mcs1_parent_derived_clean.dta")
-parent_interview <- read_dta("clean/mcs1_parent_interview_clean.dta")
-parent_cm_interview <- read_dta("clean/mcs1_parent_cm_interview_clean.dta")
-family_derived <- read_dta("clean/mcs1_family_derived_clean.dta")
-geographically_linked_data <- read_dta("clean/mcs1_geographically_linked_data_clean.dta")
-cm_interview <- read_dta("clean/mcs1_cm_interview_clean.dta")
-cm_derived <- read_dta("clean/mcs1_cm_derived_clean.dta")
+parent_derived <- read_dta("data/datamcs/clean/mcs1_parent_derived_clean.dta")
+parent_interview <- read_dta("data/datamcs/clean/mcs1_parent_interview_clean.dta")
+parent_cm_interview <- read_dta("data/datamcs/clean/mcs1_parent_cm_interview_clean.dta")
+family_derived <- read_dta("data/datamcs/clean/mcs1_family_derived_clean.dta")
+geographically_linked_data <- read_dta("data/datamcs/clean/mcs1_geographically_linked_data_clean.dta")
+cm_interview <- read_dta("data/datamcs/clean/mcs1_cm_interview_clean.dta")
+cm_derived <- read_dta("data/datamcs/clean/mcs1_cm_derived_clean.dta")
 
 mcs1 <- full_join(parent_derived, parent_interview, by = "MCSID")
 mcs1 <- full_join(mcs1, parent_cm_interview, by = "MCSID")
@@ -199,7 +153,7 @@ mcs1 <- full_join(mcs1, cm_derived, by = "MCSID")
 mcs1 <- mcs1 %>%
   select(-ends_with(".x"), -ends_with(".y"))
 
-write_dta(mcs1, "clean/mcs1_clean.dta")
+write_dta(mcs1, "data/datamcs/clean/mcs1_clean.dta")
 
 }, checkerror = function(e) {
   beep(8)  # Play an alert sound on error

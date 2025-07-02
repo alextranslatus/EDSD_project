@@ -42,6 +42,8 @@ dict_mcs <- read_excel("data/mcs_catalog.xlsx")
 elfe <- as.data.table(elfe)
 mcs <- as.data.table(mcs)
 
+beep()
+
 # Functions ####
 source("scripts/0_functions.R")
 
@@ -63,9 +65,9 @@ mcs[, wgt9m:= AOVWT2]
 mcs[, wgt3y:= BOVWT2]
 mcs[, wgt5y:= COVWT2]
 
-mcs[, inwave9m:= AHCPRS00]
-mcs[, inwave3y:= BHCPRS00]
-mcs[, inwave5y:= CHCPRS00]
+mcs[, inwave9m:= ifelse(AHCPRS00 == 1, 1, 0)]
+mcs[, inwave3y:= ifelse(BHCPRS00 == 1, 1, 0)]
+mcs[, inwave5y:= ifelse(CHCPRS00 == 1, 1, 0)]
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -86,7 +88,7 @@ elfe[, sex:= SEXE_ENF]
 
 # MCS
 
-mcs[, sex:= AHCSEX00]
+mcs[!is.na(AHCSEX00), sex:= ifelse(AHCSEX00 == 1, 1, 2)]
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -410,7 +412,17 @@ for (i in 4:20) {
        fpartemp3y:= ifelse(get(lientyp) == 1 & get(empltx) %in% 1:100, 1, 0)]
 }
 
+elfe[, mpartemp2m:= ifelse(emp2m %in% c(1,3), mpartemp2m, NA)]
+elfe[, fpartemp2m:= ifelse(emp2m %in% c(1,2), fpartemp2m, NA)]
 
+elfe[, mpartemp1y:= ifelse(emp1y %in% c(1,3), mpartemp1y, NA)]
+elfe[, fpartemp1y:= ifelse(emp1y %in% c(1,2), fpartemp1y, NA)]
+
+elfe[, mpartemp2y:= ifelse(emp2y %in% c(1,3), mpartemp2y, NA)]
+elfe[, fpartemp2y:= ifelse(emp2y %in% c(1,2), fpartemp2y, NA)]
+
+elfe[, mpartemp3y:= ifelse(emp3y %in% c(1,3), mpartemp3y, NA)]
+elfe[, fpartemp3y:= ifelse(emp3y %in% c(1,2), fpartemp3y, NA)]
 
 # MCS 
 
@@ -658,21 +670,28 @@ mcs_variables <- c(mcs_variables,
 # Save ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+beep()
+
+names(mcs)[names(mcs) == "" | is.na(names(mcs))] <- paste0("unnamed_", seq_len(sum(names(mcs) == "" | is.na(names(mcs)))))
+
+mcs <- mcs %>%
+  filter(!is.na(sex))
+  
 elfemini <- elfe[, ..elfe_variables]
 mcsmini <- mcs[, ..mcs_variables]
 
 elfe <- as.data.frame(elfe)
-save(elfe, file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/elfe.Rdata")
+save(elfe, file = "data/analysisdata/elfe.Rdata")
 
 mcs <- as.data.frame(mcs)
-save(mcs, file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/mcs.Rdata")
+save(mcs, file = "data/analysisdata/mcs.Rdata")
 
 elfemini <- as.data.frame(elfemini)
-save(elfemini, file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/elfemini.Rdata")
+save(elfemini, file = "data/analysisdata/elfemini.Rdata")
 
 mcsmini <- as.data.frame(mcsmini)
-save(mcsmini, file = "/Users/alexsheridan/Documents/Work/EDSD project/R/EDSD_project/data/analysisdata/mcsmini.Rdata")
+save(mcsmini, file = "data/analysisdata/mcsmini.Rdata")
 
 gc()
 
-
+beep()

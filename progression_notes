@@ -105,10 +105,18 @@ Started coding the summary statistics
 
 Fix the MCS weights/present in waves variables
 
+2 july 2025 -------------------------------------------------------------------
 
+MCS present in waves variables: not there because I hadn't merged all of the 
+hhgrid files
+          
+          Merging data files again
+          Done
 
+Need to fix the denominator of the part-time variable for France: only a ratio
+of those working: done
 
-
+Brain problem just before noon
 
 
 
