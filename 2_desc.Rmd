@@ -1,7 +1,7 @@
 ---
 title: "Descriptive statistics"
 author: "Alex Sheridan"
-date: "2025-07-01"
+date: "2025-07-02"
 output:
   html_document:
     css: styles.css
@@ -320,7 +320,7 @@ wmcs5 %>% tbl_svysummary(include = c("doctor9m3", "nappies9m3", "laundry9m3", "n
   modify_header(label = "**Variable**", all_stat_cols() ~ "**{level}**, N = {n_unweighted}") %>%
   add_p() %>% 
   add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
-  modify_caption("Who works outside the home? UK") %>%
+  modify_caption("Who does what at home? UK") %>%
   as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "repeat_header"))
 
@@ -367,7 +367,7 @@ welfe5 %>% tbl_svysummary(include = c("socialsuccess2m", "lovelife2m", "interest
   modify_header(label = "**Variable**", all_stat_cols() ~ "**{level}**, N = {n_unweighted}") %>%
   add_p() %>% 
   add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
-  modify_caption("Who does what at home? France") %>%
+  modify_caption("What do parents wish for their child? France") %>%
   as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "repeat_header"))
 ```
@@ -384,7 +384,7 @@ wmcs5 %>% tbl_svysummary(include = c("independence3y", "obedience3y", "negotiati
   modify_header(label = "**Variable**", all_stat_cols() ~ "**{level}**, N = {n_unweighted}") %>%
   add_p() %>% 
   add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
-  modify_caption("Who works outside the home? UK") %>%
+  modify_caption("What do parents wish for their child? UK") %>%
   as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "repeat_header"))
 
@@ -405,7 +405,7 @@ welfe5 %>% tbl_svysummary(include = c("paint3y", "read3y", "music3y", "readplus3
   modify_header(label = "**Variable**", all_stat_cols() ~ "**{level}**, N = {n_unweighted}") %>%
   add_p() %>% 
   add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
-  modify_caption("Who does what at home? France") %>%
+  modify_caption("What do parents do with their children? What activities do they choose? France") %>%
   as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "repeat_header"))
 ```
@@ -422,7 +422,7 @@ wmcs5 %>% tbl_svysummary(include = c("physical3y", "library3y", "counting3y", "s
   modify_header(label = "**Variable**", all_stat_cols() ~ "**{level}**, N = {n_unweighted}") %>%
   add_p() %>% 
   add_n("{N_miss_unweighted}", col_label = "**Missings**") %>%
-  modify_caption("Who works outside the home? UK") %>%
+  modify_caption("What do parents do with their children? What activities do they choose? UK") %>%
   as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
   kable_styling(latex_options = c("HOLD_position", "repeat_header"))
 
