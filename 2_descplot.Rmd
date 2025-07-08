@@ -1,0 +1,380 @@
+---
+title: "Descriptive statistics in plots"
+author: "Alex Sheridan"
+date: "2025-07-07"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+<style>
+body > div.container {
+  max-width: none;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+for(
+  pkg in c(
+    "haven", # stata whatever
+    "ggplot2", # graphs
+    "patchwork", # putting plots together
+    "ggtext", # bold ggplot annotation
+    "dplyr", # basics
+    "tidyr", # basics
+    "survey", # survey weights
+    "srvyr", # survey weights?
+    "gtsummary", # summary tables
+    "kableExtra", # styling of tables
+    "kable",
+    "forcats", # fct_reorder
+    "beepr", # helps save time
+    "stringr", # in pivoting: separate the suffix to get variables per year
+    "data.table" # data.table 
+  )
+){
+  if(!require(pkg, quietly = TRUE, character.only = TRUE)){
+    install.packages(pkg)
+  }
+}
+
+# Functions ####
+source("scripts/0_functions.R")
+
+# Data ####
+load(file = "data/analysisdata/elfemini.Rdata")
+load(file = "data/analysisdata/mcsmini.Rdata")
+
+# Non factorised (for regressions)
+
+elfe5 <- elfemini %>%
+  drop_na(wgt5y)
+welfe5 <- svydesign(ids = ~1, data = elfe5, weights = ~ elfe5$wgt5y)
+
+mcs5 <- mcsmini %>%
+  filter(inwave5y == 1)
+wmcs5 <- svydesign(ids = ~1, data = mcs5, weights = ~ mcs5$wgt5y)
+
+## Tasks sample 
+
+elfewhodoes <- elfe5 %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes <- svydesign(ids = ~1, data = elfewhodoes, weights = ~ elfewhodoes$wgt5y)
+
+mcswhodoes <- mcs5 %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes <- svydesign(ids = ~1, data = mcswhodoes, weights = ~ mcswhodoes$wgt5y)
+
+# Factorised (for plots)
+
+elfemini_fact <- elfe5 %>%
+  mutate(across(-c(wgt1y, wgt2y, wgt3y, wgt5y), as.factor))
+
+mcsmini_fact <- mcs5 %>% 
+  mutate(across(-c(wgt9m, wgt3y, wgt5y), as_factor))
+
+for(i in c("sex")) {
+  levels(elfemini_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("sex")) {
+  levels(mcsmini_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("meduc3")) {
+  levels(elfemini_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc3")) {
+  levels(mcsmini_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc")) {
+  levels(elfemini_fact[, i]) <- c("<=bepc",  "cap-bep", "bac", "bac+2", "bac+3/4", ">bac+4")
+}
+
+for(i in c("meduc")) {
+  levels(mcsmini_fact[, i]) <- c("None", "Other", "GCSE D-G", "GCSE A-C", "Trade", "A-level", "HE below deg", "Bach", "Higher deg")
+}
+
+for(i in c("famstr2m", "famstr1y", "famstr2y", "famstr3y", "famstr5y")) {
+  levels(elfemini_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("famstr9m", "famstr3y", "famstr5y")) {
+  levels(mcsmini_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("twopar2m", "twopar1y", "twopar2y", "twopar3y", "twopar5y")) {
+  levels(elfemini_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar9m", "twopar3y", "twopar5y")) {
+  levels(mcsmini_fact[, i]) <- c("No", "Yes")
+}
+
+# Role modelling ####
+
+for(i in c("nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3")) {
+  levels(elfemini_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3")) {
+  levels(mcsmini_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("emp2m", "emp1y", "emp2y", "emp3y", "emp5y")) {
+  levels(elfemini_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp9m", "emp3y")) {
+  levels(mcsmini_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y")) {
+  levels(elfemini_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("mpartemp9m", "fpartemp9m", "mpartemp3y")) {
+  levels(mcsmini_fact[, i]) <- c("No", "Yes")
+}
+
+# Attitudes expectations ####
+
+for(i in c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m")) {
+  levels(elfemini_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y",
+           "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y")) {
+  levels(mcsmini_fact[, i]) <- c("No", "Yes")
+}
+
+# Children's access to resources ####
+
+for(i in c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y", 
+          "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
+  levels(elfemini_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y")) {
+  levels(mcsmini_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y")) {
+  levels(mcsmini_fact[, i]) <- c("Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
+}
+
+for(i in c("fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcsmini_fact[, i]) <- c("Every day", "Several times a week", "Once or twice a week", "Once or twice a month", "Less often", "Not at all")
+}
+
+# Tasks sample 
+
+elfewhodoes_fact <- elfemini_fact %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes_fact <- svydesign(ids = ~1, data = elfewhodoes_fact, weights = ~ elfewhodoes_fact$wgt5y)
+
+mcswhodoes_fact <- mcsmini_fact %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes_fact <- svydesign(ids = ~1, data = mcswhodoes_fact, weights = ~ mcswhodoes_fact$wgt5y)
+
+
+```
+
+```{r}
+
+extract_coef <- function(model, model_name, country_name) {
+  coef_val <- coef(model)["sex"]
+  ci_vals <- confint(model, "sex", level = 0.95)
+  
+  data.frame(
+    model = model_name,
+    estimate = coef_val,
+    conf.low = ci_vals[1],
+    conf.high = ci_vals[2],
+    country = country_name
+  )
+}
+
+```
+
+
+```{r}
+
+elfe_doctor <- lm(doctor2m3 ~ sex, elfewhodoes)
+elfe_nappies <- lm(nappies2m3 ~ sex, elfewhodoes)
+elfe_laundry <- lm(laundry2m3 ~ sex, elfewhodoes)
+elfe_night <- lm(night2m3 ~ sex, elfewhodoes)
+elfe_clean <- lm(clean2m3 ~ sex, elfewhodoes)
+elfe_cook <- lm(cook2m3 ~ sex, elfewhodoes)
+elfe_diy <- lm(diy2m3 ~ sex, elfewhodoes)
+
+mcs_doctor <- lm(doctor9m3 ~ sex, mcswhodoes)
+mcs_nappies <- lm(nappies9m3 ~ sex, mcswhodoes)
+mcs_laundry <- lm(laundry9m3 ~ sex, mcswhodoes)
+mcs_night <- lm(night9m3 ~ sex, mcswhodoes)
+mcs_clean <- lm(clean9m3 ~ sex, mcswhodoes)
+mcs_cook <- lm(cook9m3 ~ sex, mcswhodoes)
+mcs_diy <- lm(diy9m3 ~ sex, mcswhodoes)
+
+coef_df <- rbind(
+  extract_coef(elfe_doctor, "doctor2m3", "France"),
+  extract_coef(elfe_nappies, "nappies2m3", "France"),
+  extract_coef(elfe_laundry, "laundry2m3", "France"),
+  extract_coef(elfe_night, "night2m3", "France"),
+  extract_coef(elfe_clean, "clean2m3", "France"),
+  extract_coef(elfe_cook, "cook2m3", "France"),
+  extract_coef(elfe_diy, "diy2m3", "France"),
+  extract_coef(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef(mcs_night, "night9m3", "UK"),
+  extract_coef(mcs_clean, "clean9m3", "UK"),
+  extract_coef(mcs_cook, "cook9m3", "UK"),
+  extract_coef(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+acoef <- ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 3) +
+  coord_flip() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "... irrespective of having a son\n or a daughter",
+    x = "",
+    y = "Coefficient for child sex",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    strip.text = element_text(size = 11),
+    plot.title = element_text(size = 12, face = "bold"),
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    legend.position = "none",
+  )
+
+```
+
+```{r}
+
+vars <- c("doctor2m3", "nappies2m3", "laundry2m3", 
+          "night2m3", "clean2m3", "cook2m3", "diy2m3")
+
+df_long <- elfewhodoes_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("Mother mostly", "Father mostly", "Balanced")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+father_order <- df_weighted %>%
+  filter(Response == "Father mostly") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = father_order))
+
+afr <- ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "Fathers do less...",
+    x = "France",
+    y = "",
+    fill = "Response"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    plot.margin = margin(5, 5, 0, 5),
+    plot.title = element_text(size = 12, face = "bold")) +
+  annotate("text", x = 7, y = 0.69, label = "Mother mostly", col = "white", size = 10/.pt) +
+  annotate("text", x = 7, y = 0.1865, label = "Balanced", col = "white", size = 10/.pt) +
+  annotate("text", x = 7.85, y = 0.373, label = "Father mostly", col = "black", size = 10/.pt) +
+  annotate("segment", x = 7.55, y = 0.376, xend = 7, yend = 0.376, 
+         arrow = arrow(type = "closed", length = unit(0.02, "npc")))
+
+vars <- c("doctor9m3", "nappies9m3", "laundry9m3", 
+          "night9m3", "clean9m3", "cook9m3", "diy9m3")
+
+df_long <- mcswhodoes_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("Mother mostly", "Father mostly", "Balanced")),
+    Task = factor(Task, levels = rev(c("doctor9m3", "nappies9m3", "night9m3", "laundry9m3", "clean9m3", "cook9m3", "diy9m3")))
+  )
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+father_order <- df_weighted %>%
+  filter(Response == "Father mostly") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = father_order))
+
+auk <- ggplot(df_long, aes(x = Task, fill = Response)) +
+  geom_bar(position = "fill") +
+  coord_flip(clip = "off") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    x = "UK",
+    y = "Responsibility for tasks",
+    fill = "Response"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(size = 10),
+    axis.text.y = element_text(size = 10),
+    axis.title.x = element_text(size = 11),
+    plot.margin = margin(0, 5, 5, 5),
+    axis.title.y = element_text(size = 11)
+  )
+
+adist <- afr / auk
+
+adist | acoef
+
+```
+
+
+

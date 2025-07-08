@@ -1,15 +1,16 @@
 
-18 june 2025 -------------------------------------------------------------------
+18 June 2025 -------------------------------------------------------------------
 
 Set up github repository
 
 Coded weights, child sex, mothers' education
 
-Problem: couldn't code maternity leave for France, I need CONGMATPAR at 2 months and 1 year
+Problem: couldn't code maternity leave for France, I need CONGMATPAR at 2 months 
+and 1 year
 
 Elfe data restructured: what a mess for data users
 
-23 june 2025 -------------------------------------------------------------------
+23 June 2025 -------------------------------------------------------------------
 
 Role modelling: coded who does chores, including with 3 categories variables:
       
@@ -19,18 +20,20 @@ Role modelling: coded who does chores, including with 3 categories variables:
       
       Matching variables in Elfe and MCS!
       
-      Add division of labour outside the home? -> started working on this 24 june
+      Add division of labour outside the home? -> started working on this 24 
+      June
       
       Add age 1 variables for Elfe?
 
-Attitudes expectations: not matching, not sure how to compare MCS and Elfe variables...
+Attitudes expectations: not matching, not sure how to compare MCS and Elfe
+variables...
 coded as dummy variables mostly
 
 Cleaned the variables script more, listing the variables I've created as I go
 
 Children's access to resources: MCS done pretty much, started Elfe
 
-24 june 2025 -------------------------------------------------------------------
+24 June 2025 -------------------------------------------------------------------
 
 If variables available in multiple waves, which do I choose?
 
@@ -40,7 +43,7 @@ Missing variables for coding maternity (etc) leave in Elfe
 
 Coded children's hobbies in clubs in Elfe
 
-25 june 2025 -------------------------------------------------------------------
+25 June 2025 -------------------------------------------------------------------
 
 Finished coding parents' reason for part-time work in Elfe
 
@@ -49,30 +52,34 @@ Sent email for missing variables for coding maternity (etc) leave in Elfe
 Realised there might be a SLIGHT problem when I structure the MCS data:
 
       28 mothers are partner respondents, 7 fathers are main respondents:
-      will need to fix this in clean_mcs scripts, shouldn't be an issue, but better to fix it
-      fix by adding condition that _m needs to be ADDRES00 = 1, and _p ADDRES00 = 2
+      will need to fix this in clean_mcs scripts, shouldn't be an issue, but 
+      better to fix it:
+      fix by adding condition that _m needs to be ADDRES00 = 1, and _p 
+      ADDRES00 = 2
       maybe find how to redistribute the mother partner interview as _m
       and the father main interview as _p,
-      because right now, 28 _p's are actually mothers and 7 _m's are actually fathers
+      because right now, 28 _p's are actually mothers and 7 _m's are actually 
+      fathers
       eg. matters when coding the DCWRK00 work variables 
       
-30 june 2025 -------------------------------------------------------------------
+30 June 2025 -------------------------------------------------------------------
 
 How do I work with family structure?
 
       For example: for work status, whose status matters? both parents? the ones 
       living with the child?
       
-Coded work status of parents for MCS: I ignored the items in the questionnaire for 
-which the work status was unknown for the main parent
+Coded work status of parents for MCS: I ignored the items in the questionnaire 
+for which the work status was unknown for the main parent
 MCS had a contructed variable with more options than the ELFE variable: in 
 particular MCS had options for mothers with no partner
 
 Also, coding part time work: should I keep an NA for people who don't have jobs?
-Should probably, but that would reduce the sample size... Keep an option 2 = no job?
+Should probably, but that would reduce the sample size... Keep an option 2 = no 
+job?
 Done
 
-1 july 2025 -------------------------------------------------------------------
+1 July 2025 --------------------------------------------------------------------
 
 Spent a lot of time on maternity etc leave. Conclusion: probably should look at
 length of leave for both parents. I think in MCS it's sort of assumed that all
@@ -81,8 +88,8 @@ on length of maternity leave at 2 months only, which is weird, it's like an idea
 of how long it'll be? But then in subsequent surveys, I can keep checking if
 they've changed plans and are still on leave.
 
-        For fathers: in MCS, it's weird how many fathers say they've been on leave
-        again, should I focus on length?
+        For fathers: in MCS, it's weird how many fathers say they've been on 
+        leave gain, should I focus on length?
         
         I'll finish coding this variable when I have the complete elfe data
 
@@ -105,7 +112,7 @@ Started coding the summary statistics
 
 Fix the MCS weights/present in waves variables
 
-2 july 2025 -------------------------------------------------------------------
+2 July 2025 --------------------------------------------------------------------
 
 MCS present in waves variables: not there because I hadn't merged all of the 
 hhgrid files
@@ -124,6 +131,17 @@ summary statistics code, fixed more issues and...:
 Got a nice first version of summary statistics, with pvalues for boy-girl
 differences: for the most part no differences between parents of boys and girls,
 except for children's access to resources: interesting!
+
+7 July 2025 --------------------------------------------------------------------
+
+Who does what at home variables: for the most part, coded as not applicable if 
+family structure different from two parents at home
+
+Finished the bar plots and coef plots for who does what at home
+
+8 July 2025 --------------------------------------------------------------------
+
+Finished knitting properly
 
 
 

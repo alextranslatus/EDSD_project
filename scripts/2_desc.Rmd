@@ -92,7 +92,6 @@ for(i in c("twopar9m", "twopar3y", "twopar5y")) {
 
 # Role modelling ####
 
-
 for(i in c("nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3")) {
   levels(elfemini[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
 }
