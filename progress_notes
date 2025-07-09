@@ -143,8 +143,37 @@ Finished the bar plots and coef plots for who does what at home
 
 Finished knitting properly
 
+Took care of attitudes/expectations plots
 
+Need some recoding for children's access to resources
 
+# "BPOFRE00"  "BPREOF00" freq "BPREEL00" does anyone : reading do again.   1 is bigger
+# 
+# "BPOFLI00"                  "BPTOLI00"               library ok           1 is smaller
+# 
+#                             "BPSDPA00"               physical act ok      
+# 
+# "BPOFAB00"                  "BPALPH00"               alphabet             1 is smaller
+# 
+# "BPOFCO00"                  "BPNUMB00"               counting ok          1 is smaller
+# 
+# "BPOFSO00"                  "BPSONG00"               songs ok            1 is smaller 
+#  
+# "BPPAMA00"                  "BPDRAW00"               draw.           1 is smaller
+
+9 July 2025 --------------------------------------------------------------------
+
+Fixed the children's access to resources variables. Why do many missings at age
+3 compared to age 5 in MCS? + I left out the frequencies for now: add a never 
+category then you can add them
+
+Finished the last set of plots
+
+Should explore more of the frequencies?
+
+Now need to make sense of what's going on + stratify by social class
+
+And fix the maternity leave etc variables, do a set of plots for that too?
 
 
 

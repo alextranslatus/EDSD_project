@@ -21,6 +21,7 @@ for(
   pkg in c(
     "haven", # stata whatever
     "ggplot2", # graphs
+    "viridis", # colors
     "dplyr", # basics
     "tidyr", # basics
     "survey", # survey weights
@@ -129,21 +130,27 @@ for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", 
 
 # Children's access to resources ####
 
-for(i in c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y", 
-          "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
+for(i in c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y",
+           "anyactivity3y",
+           "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
   levels(elfemini[, i]) <- c("No", "Yes")
 }
 
-for(i in c("physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y")) {
+for(i in c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+           "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")) {
   levels(mcsmini[, i]) <- c("No", "Yes")
 }
 
-for(i in c("fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y")) {
+for(i in c("fqread3y", "fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")) {
   levels(mcsmini[, i]) <- c("Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
 }
 
-for(i in c("fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
-  levels(mcsmini[, i]) <- c("Every day", "Several times a week", "Once or twice a week", "Once or twice a month", "Less often", "Not at all")
+for(i in c("fqlibrary3y")) {
+  levels(mcsmini[, i]) <- c("On special occasions", "Once a month", "Once a fortnight", "Once a week")
+}
+
+for(i in c("fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcsmini[, i]) <- c("Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day")
 }
 
 elfe5 <- elfemini %>%
@@ -154,6 +161,26 @@ mcs5 <- mcsmini %>%
   filter(inwave5y == 1)
 wmcs5 <- svydesign(ids = ~1, data = mcs5, weights = ~ mcs5$wgt5y)
 
+# Role modelling sample 
+
+elfewhodoes <- elfe5 %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes <- svydesign(ids = ~1, data = elfewhodoes, weights = ~ elfewhodoes$wgt5y)
+
+mcswhodoes <- mcs5 %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes <- svydesign(ids = ~1, data = mcswhodoes, weights = ~ mcswhodoes$wgt5y)
+
+# Attitudes expectations sample 
+
+elfeexpect <- elfe5 %>% 
+  drop_na(socialsuccess2m, lovelife2m, interestingjob2m, passion2m, calmlife2m, bigfamily2m, lotsoffriends2m, fairerworld2m, goodhealth2m, otherwish2m)
+welfeexpect <- svydesign(ids = ~1, data = elfeexpect, weights = ~ elfeexpect$wgt5y)
+
+mcsexpect <- mcs5 %>%
+  drop_na(independence3y, obedience3y, negotiation3y, respectelders3y, dowellatschool3y, instillreligiousvalues3y,
+           bewellliked3y, thinkforself3y, workhard3y, helpothers3y, obeyparents3y, qualityreligiousvalues3y)
+wmcsexpect <- svydesign(ids = ~1, data = mcsexpect, weights = ~ mcsexpect$wgt5y)
 
 ```
 
@@ -197,6 +224,7 @@ percent_data <- long_data %>%
 ggplot(percent_data, aes(x = time, y = percent, fill = family_structure)) +
   geom_bar(stat = "identity", position = "stack") +
   coord_flip() +
+  scale_fill_manual(values = rev(viridis(4, option = "D"))) +
   scale_y_continuous(labels = scales::percent_format()) +
   labs(title = "Family structure in France, from 2 months to age 5",
        subtitle = "By age 5, around 87% of children still live with both natural parents",
@@ -247,6 +275,7 @@ percent_data <- long_data %>%
 ggplot(percent_data, aes(x = time, y = percent, fill = family_structure)) +
   geom_bar(stat = "identity", position = "stack") +
   coord_flip() +
+  scale_fill_manual(values = rev(viridis(4, option = "D"))) +
   scale_y_continuous(labels = scales::percent_format()) +
   labs(title = "Family structure in the UK, from 9 months to age 5",
        subtitle = "By age 5, around 75% of children still live with both natural parents",
@@ -310,6 +339,7 @@ welfe5 %>% tbl_svysummary(include = c("mpartemp2m", "fpartemp2m", "mpartemp1y", 
 ### UK
 
 ```{r}
+
 wmcs5 %>% tbl_svysummary(include = c("doctor9m3", "nappies9m3", "laundry9m3", "night9m3", "clean9m3", "cook9m3", "diy9m3"),
                         label = list(),
                         statistic = all_categorical() ~ c("{p}"),
@@ -395,7 +425,7 @@ wmcs5 %>% tbl_svysummary(include = c("independence3y", "obedience3y", "negotiati
 ### France
 
 ```{r}
-welfe5 %>% tbl_svysummary(include = c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y", "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y"),
+welfe5 %>% tbl_svysummary(include = c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y", "anyactivity3y", "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y"),
                           label = list(),
                           statistic = all_categorical() ~ c("{p}"),
                           digits = list( ~ c(1, 1)),
@@ -412,7 +442,12 @@ welfe5 %>% tbl_svysummary(include = c("paint3y", "read3y", "music3y", "readplus3
 ### UK
 
 ```{r}
-wmcs5 %>% tbl_svysummary(include = c("physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y", "fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y", "fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y"),
+
+wmcs5 %>% tbl_svysummary(include = c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+           "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y",
+           "fqread3y", "fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y",
+           "fqlibrary3y", 
+           "fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y"),
                         label = list(),
                         statistic = all_categorical() ~ c("{p}"),
                         digits = list( ~ c(1, 1)),

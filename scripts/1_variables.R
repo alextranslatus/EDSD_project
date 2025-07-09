@@ -94,11 +94,11 @@ mcs[!is.na(AHCSEX00), sex:= ifelse(AHCSEX00 == 1, 1, 2)]
 
 elfe_variables <- c(elfe_variables,
                     
-                    "sex")  # 1 = "Male", 2 = "Female"
+                    "sex")  # "Male", "Female"
 
 mcs_variables <- c(mcs_variables, 
                    
-                   "sex")  # 1 = "Male", 2 = "Female"
+                   "sex")  # "Male", "Female"
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,19 +146,19 @@ mcs[, twopar5y:= ifelse(famstr5y == 1, 1, 0)]
 elfe_variables <- c(elfe_variables,
                     
                     "famstr2m", "famstr1y", "famstr2y", "famstr3y", "famstr5y",
-                    # 1 = "Two natural parents", 2 = "Mother only", 3 = "Father only", 4 = "Other"
+                    # "Two natural parents", "Mother only", "Father only", "Other"
                     
                     "twopar2m", "twopar1y", "twopar2y", "twopar3y", "twopar5y"
-                    # 1 = "Two natural parents", 0 = "No"
+                    # "Two natural parents", "No"
                     )
 
 mcs_variables <- c(mcs_variables, 
                    
                    "famstr9m", "famstr3y", "famstr5y",
-                   # 1 = "Two natural parents", 2 = "Mother only", 3 = "Father only", 4 = "Other"
+                   # "Two natural parents", "Mother only", "Father only", "Other"
                    
                    "twopar9m", "twopar3y", "twopar5y"
-                   # 1 = "Two natural parents", 0 = "No"
+                   # "Two natural parents", "No"
                    )
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,15 +200,15 @@ mcs[meduc == 1 & APLFTE00_m > 16 & !is.na(APLFTE00_m), meduc3:= 2]
 
 elfe_variables <- c(elfe_variables,
                     
-                    "meduc3", # 1 = "Low", 2 = "Medium", 3 = "High"
+                    "meduc3", # "Low", "Medium", "High"
                     
-                    "meduc")  # 1 = "<=bepc",  2 = "cap-bep", 3 = "bac", 4 = "bac+2", 5 = "bac+3/4", 6 = ">bac+4"
+                    "meduc")  # "<=bepc",  "cap-bep", "bac", "bac+2", "bac+3/4", ">bac+4"
 
 mcs_variables <- c(mcs_variables,
                    
-                   "meduc3", # 1 = "Low", 2 = "Medium", 3 = "High"
+                   "meduc3", # "Low", "Medium", "High"
                    
-                   "meduc")  # 1 = "None", 2 = "Other", 3 = "GCSE D-G", 4 = "GCSE A-C", 5 = "Trade", 6 = "A-level", 7 = "HE below deg", 8 = "Bach", 9 = "Higher deg"
+                   "meduc")  # "None", "Other", "GCSE D-G", "GCSE A-C", "Trade", "A-level", "HE below deg", "Bach", "Higher deg"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Role modelling ####
@@ -477,7 +477,7 @@ mcs[BDCWRK00 == 3, emp3y:= 2]
 mcs[BDCWRK00 %in% c(2, 5, 9), emp3y:= 3]
 mcs[BDCWRK00 %in% c(4, 6, 10), emp3y:= 4]
 
-# Part-time: 1 = "Yes", 0 = "No"
+# Part-time
 
 mcs[ADWKST00_m %in% c(1, 2), mpartemp9m:= ifelse(APFLXW0A_m == 1 | APFLXW0B_m == 1 | APFLXW0C_m == 1 | 
                             APFLXW0D_m == 1 | APFLXW0E_m == 1 | APFLXW0F_m == 1, 1, 0)]
@@ -488,36 +488,35 @@ mcs[ADWKST00_p %in% c(1, 2), fpartemp9m:= ifelse(APFLXW0A_p == 1 | APFLXW0B_p ==
 mcs[BDWKST00_m %in% c(1, 2), mpartemp3y:= ifelse(BPFLXW0A_m == 1, 1, 0)]
 
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
                     
                     # "nappies2m", "tuckin2m", "bath2m", "walk2m", "night2m", "doctor2m", "dishes2m", "groceries2m", "cook2m", "laundry2m", "clean2m", "diy2m", 
-                    # Who does what? 1 = "Always the mother", 2 = "Most often the mother", 3 = "Both", 4 = "Most often the father", 5 = "Always the father"
+                    # Who does what? "Always the mother", "Most often the mother", "Both", "Most often the father", "Always the father"
                     
                     "nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3",
-                    # Who does what (3 categories)? 1 = "Mother mostly", 2 = "Balanced, 3 = "Father mostly"
+                    # Who does what (3 categories)? "Mother mostly", "Balanced, "Father mostly"
                     
                     "emp2m", "emp1y", "emp2y", "emp3y", "emp5y",
-                    # Who's working? 1 = "Both parents", 2 = "Father only", 3 = "Mother only", 4 = "Neither"
+                    # Who's working? "Both parents", "Father only", "Mother only", "Neither"
                     
                     "mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y"
-                    # Part-time: 1 = "Yes", 0 = "No"
+                    # Part-time: "No", "Yes"
                     
                     # , "mpartkids2m", "fpartkids2m", "mpartkids1y", "fpartkids1y", "mpartkids2y", "fpartkids2y", "mpartkids3y", "fpartkids3y"
-                    ) # Part-time to be with kids or at home: 1 = "Yes", 0 = "No"
+                    ) # Part-time to be with kids or at home: "No", "Yes"
 
 mcs_variables <- c(mcs_variables,
                    
                    "nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3",
-                   # Who does what (3 categories)? 1 = "Mother mostly", 2 = "Balanced, 3 = "Father mostly"
+                   # Who does what (3 categories)? "Mother mostly", "Balanced, "Father mostly"
                    
                    "emp9m", "emp3y",
-                   # Who's working? 1 = "Both parents", 2 = "Father only", 3 = "Mother only", 4 = "Neither"
+                   # Who's working? "Both parents", "Father only", "Mother only", "Neither"
                    
                    "mpartemp9m", "fpartemp9m", "mpartemp3y"
-                   # Part-time: 1 = "Yes", 0 = "No"
+                   # Part-time: "No", "Yes"
                    ) 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Attitudes expectations ####
@@ -565,15 +564,15 @@ for (i in seq_along(values)) {
 elfe_variables <- c(elfe_variables,
                     
                     "socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m"
-                    ) # Wish for the child, cited? 1 = "Yes", 0 = "No"
+                    ) # Wish for the child, cited? "No", "Yes"
 
 mcs_variables <- c(mcs_variables,
                    
                    "independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y", 
-                   # Values to instill, cited? 1 = "Yes", 0 = "No"
+                   # Values to instill, cited? "No", "Yes"
                    
                    "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y"
-                   ) # Most important qualities, cited? 1 = "Yes", 0 = "No"
+                   ) # Most important qualities, cited? "No", "Yes"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Children's access to resources ####
@@ -584,28 +583,42 @@ mcs_variables <- c(mcs_variables,
 # Parent-child activity variables
 
 activity_vars <- paste0("A03R_ACT", 1:7)
-activity_names <- c("paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y")
+activity_names <- c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y")
 
 for (i in seq_along(activity_vars)) {
   elfe[, (activity_names[i]):= ifelse(get(activity_vars[i]) == 1, 1, 0)]
 }
 
-# Extra activities
+# Extra activities 
 
-extra_vars <- paste0("A03R_ACEXTRASCP", 1:8)
+elfe[, anyactivity3y:= ifelse(A03R_ACEXTRASC == 1, 1, 0)]
+
+extra_vars <- paste0("A03R_ACEXTRASCP", 1:8) # for subsample of children who do extra activities
 extra_names <- c("swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")
 
 for (i in seq_along(extra_vars)) {
   elfe[, (extra_names[i]):= ifelse(get(extra_vars[i]) == 1, 1, 0)]
 }
 
+
+
 # MCS
 
 # age 3
 
-vars <- c("physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y")
-m_vars <- c("BPSDPA00_m", "BPTOLI00_m", "BPNUMB00_m", "BPSONG00_m", "BPREEL00_m", "BPYOCH00_m", "BPEATW00_m", "BPALPH00_m", "BPDRAW00_m")
-p_vars <- c("BPSDPA00_p", "BPTOLI00_p", "BPNUMB00_p", "BPSONG00_p", "BPREEL00_p", "BPYOCH00_p", "BPEATW00_p", "BPALPH00_p", "BPDRAW00_p")
+mcs[BPOFRE00_m > 0, fqread3y:= BPOFRE00_m]
+mcs[is.na(fqread3y) & BPOFRE00_p > 0, fqread3y:= BPOFRE00_p]
+
+mcs[BPREOF00_m > 0 & fqread3y > BPREOF00_m, fqread3y:= BPREOF00_m]
+mcs[BPREOF00_p > 0 & fqread3y > BPREOF00_p, fqread3y:= BPREOF00_p]
+
+mcs[, fqread3y:= 6 - fqread3y]
+
+mcs[!is.na(fqread3y), read3y:= ifelse(fqread3y %in% 1:5, 1, 0)]
+
+vars <- c("library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y")
+m_vars <- c("BPTOLI00_m", "BPNUMB00_m", "BPSONG00_m", "BPALPH00_m", "BPDRAW00_m", "BPSDPA00_m")
+p_vars <- c("BPTOLI00_p", "BPNUMB00_p", "BPSONG00_p", "BPALPH00_p", "BPDRAW00_p", "BPSDPA00_p")
 
 for (i in seq_along(vars)) {
   m_var <- m_vars[i]
@@ -616,9 +629,9 @@ for (i in seq_along(vars)) {
   mcs[is.na(get(new_var)), (new_var):= ifelse(get(p_var) == 1, 1, 0)]
 }
 
-vars <- c("fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y")
-m_vars <- c("BPOFCO00_m", "BPOFLI00_m", "BPPLAY00_m", "BPOFRE00_m", "BPPAMA00_m", "BPOFAB00_m", "BPOFSO00_m")
-p_vars <- c("BPOFCO00_p", "BPOFLI00_p", "BPPLAY00_p", "BPOFRE00_p", "BPPAMA00_p", "BPOFAB00_p", "BPOFSO00_p")
+vars <- c("fqlibrary3y", "fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")
+m_vars <- c("BPOFLI00_m", "BPOFCO00_m", "BPOFSO00_m", "BPOFAB00_m", "BPPAMA00_m")
+p_vars <- c("BPOFLI00_p", "BPOFCO00_p", "BPOFSO00_p", "BPOFAB00_p", "BPPAMA00_p")
 
 for (i in seq_along(vars)) {
   m_var <- m_vars[i]
@@ -631,40 +644,62 @@ for (i in seq_along(vars)) {
 
 # age 5
 
-vars <- c("fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y")
+vars <- c("read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")
+fqvars <- c("fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")
 m_vars <- c("CPREOF00_m", "CPSITS00_m", "CPPLMU00_m", "CPPAMA00_m", "CPACTI00_m", "CPGAME00_m", "CPWALK00_m")
 p_vars <- c("CPREOF00_p", "CPSITS00_p", "CPPLMU00_p", "CPPAMA00_p", "CPACTI00_p", "CPGAME00_p", "CPWALK00_p")
+
+for (i in seq_along(fqvars)) {
+  m_var <- m_vars[i]
+  p_var <- p_vars[i]
+  new_var <- fqvars[i]
+  
+  mcs[, (new_var) := fifelse(get(m_var) > 0, 6 - get(m_var), NA_integer_)]
+  mcs[is.na(get(new_var)) & get(p_var) > 0, (new_var) := 6 - get(p_var)]
+}
 
 for (i in seq_along(vars)) {
   m_var <- m_vars[i]
   p_var <- p_vars[i]
   new_var <- vars[i]
   
-  mcs[, (new_var):= ifelse(get(m_var) > 0, get(m_var), NA)]
-  mcs[is.na(get(new_var)), (new_var):= ifelse(get(p_var) > 0, get(p_var), NA)]
+  mcs[get(m_var) > 0, (new_var) := fifelse(get(m_var) %in% 1:5, 1, 0)]
+  mcs[is.na(get(new_var)) & get(p_var) > 0, (new_var) := fifelse(get(p_var) %in% 1:5, 1, 0)]
 }
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 elfe_variables <- c(elfe_variables,
                     
-                    "paint3y", "read3y", "music3y", "readplus3y", "counting3y", "writing3y", "puzzle3y",
-                    # Parent-child activities: 1 = "Yes", 0 = "No"
+                    "frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y",
+                    # Parent-child activities: "No", "Yes"
+                    
+                    "anyactivity3y", 
+                    # extra activities? "No", "Yes"
                     
                     "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y"
-                    ) # child's activities in clubs: 1 = "Yes", 0 = "No"
+                    ) # child's activities in clubs: "No", "Yes"
 
 mcs_variables <- c(mcs_variables,
                    
-                   "physical3y", "library3y", "counting3y", "songs3y", "read3y", "familymeal3y", "alphabet3y", "paint3y",
-                   # anyone does this with child? 1 = "Yes", 0 = "No"
+                   "read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+                   # anyone does this with child? "No", "Yes"
                    
-                   "fqcounting3y", "fqlibrary3y", "fqplay3y", "fqread3y", "fqpaint3y", "fqalphabet3y", "fqsongs3y",
-                   # how often? 1 = "Occasionally or less than once a week", 2 = "1 - 2 days per week", 3 = "3 times a week", 4 = "4 times a week", 5 = "5 times a week", 6 = "6 times a week", 7 = "7 times a week constantly"
+                   "fqread3y", 
+                   # how often? "Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly"
                    
-                   "fqread5y", "fqstories5y", "fqmusic5y", "fqdraw5y", "fqphysical5y", "fqindoor5y", "fqpark5y"
-                   ) # how often do you these with child? 1 = "Every day", 2 = "Several times a week", 3 = "Once or twice a week", 4 = "Once or twice a month", 5 = "Less often", 6 = "Not at all"
-
+                   "fqlibrary3y", 
+                   # how often? "On special occasions", "Once a month", "Once a fortnight", "Once a week"
+                   
+                   "fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y",
+                   # how often? "Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week/constantly"
+                   
+                   "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y",
+                   # anyone does this with child? "No", "Yes"
+                   
+                   "fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y"
+                   ) # how often do you these with child? "Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day"
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save ####
