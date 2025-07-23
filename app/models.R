@@ -366,6 +366,8 @@ mm4ae <- lm(physical5y ~ sex * meduc3 + emp9m + leave9m + twopar9m, mcsresources
 mm4af <- lm(indoor5y ~ sex * meduc3 + emp9m + leave9m + twopar9m, mcsresources)
 mm4ag <- lm(park5y ~ sex * meduc3 + emp9m + leave9m + twopar9m, mcsresources)
 
+dir.create("app/data", recursive = TRUE, showWarnings = FALSE)
+
 save(
   attitudefr_models_list,
   attitudeuk_models_list,
