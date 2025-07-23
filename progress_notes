@@ -175,11 +175,50 @@ Now need to make sense of what's going on + stratify by social class
 
 And fix the maternity leave etc variables, do a set of plots for that too?
 
+11 July 2025 -------------------------------------------------------------------
 
+Coded frequencies of children's access to resources variables in MCS to include
+a 0 category for "not at all"
 
+While coding the maternity etc leave variables, found an improvement to make to 
+employment variables
 
+Taking a break in data coding
 
+21 July 2025 -------------------------------------------------------------------
 
+Finished coding maternity etc leave, employment and part time vars for ELFE.
+
+Coding them for MCS.
+          
+          Maternity etc leave 9m: done
+          
+          UK: fathers take annual leave a lot, a way to take paternity leave?
+          for France too?
+          
+          Maternity leave 3y: contradictory info from two variables, don't know 
+          why
+          
+          Done
+          
+          Who's working variables also completed for the UK
+          
+          Need to complete the part time variables for the UK at some point
+
+Regressions with controls for leave and employment: a lot of missingness for
+leave for the UK, no missing values for employment
+          
+          Leave: imputing as 4: no one took leave
+
+22 July 2025 -------------------------------------------------------------------
+
+Finishing writing data
+
+Double checked the missing values weren't coded as 0s
+          
+          
+          
+          
 
 
 

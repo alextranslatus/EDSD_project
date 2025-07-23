@@ -8,3 +8,6 @@
 .quarto
 
 data/
+
+# Allow only the processed models
+!app/data/models_lists.RData

@@ -133,24 +133,24 @@ for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", 
 for(i in c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y",
            "anyactivity3y",
            "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
-  levels(elfemini[, i]) <- c("No", "Yes")
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
 }
 
 for(i in c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
            "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")) {
-  levels(mcsmini[, i]) <- c("No", "Yes")
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
 }
 
-for(i in c("fqread3y", "fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")) {
-  levels(mcsmini[, i]) <- c("Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
+for(i in c("fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")) {
+  levels(mcs5_fact[, i]) <- c("Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
 }
 
 for(i in c("fqlibrary3y")) {
-  levels(mcsmini[, i]) <- c("On special occasions", "Once a month", "Once a fortnight", "Once a week")
+  levels(mcs5_fact[, i]) <- c("On special occasions", "Once a month", "Once a fortnight", "Once a week")
 }
 
-for(i in c("fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
-  levels(mcsmini[, i]) <- c("Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day")
+for(i in c("fqread3y", "fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day")
 }
 
 elfe5 <- elfemini %>%

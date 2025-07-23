@@ -1,0 +1,2046 @@
+---
+title: "Descriptive statistics in plots"
+author: "Alex Sheridan"
+date: "2025-07-07"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+for(
+  pkg in c(
+    "haven", # stata whatever
+    "ggplot2", # graphs
+    "patchwork", # putting plots together
+    "ggtext", # bold ggplot annotation
+    "viridis", # colors
+    "dplyr", # basics
+    "tidyr", # basics
+    "survey", # survey weights
+    "srvyr", # survey weights?
+    "gtsummary", # summary tables
+    "kableExtra", # styling of tables
+    "kable",
+    "forcats", # fct_reorder
+    "beepr", # helps save time
+    "stringr", # in pivoting: separate the suffix to get variables per year
+    "data.table" # data.table 
+  )
+){
+  if(!require(pkg, quietly = TRUE, character.only = TRUE)){
+    install.packages(pkg)
+  }
+}
+
+# Functions ####
+source("scripts/0_functions.R")
+
+# Data ####
+load(file = "data/analysisdata/elfemini.Rdata")
+load(file = "data/analysisdata/mcsmini.Rdata")
+
+# Non factorised (for regressions)
+
+elfe5 <- elfemini %>%
+  drop_na(wgt5y) %>%
+  drop_na(meduc3)
+welfe5 <- svydesign(ids = ~1, data = elfe5, weights = ~ elfe5$wgt5y)
+
+mcs5 <- mcsmini %>%
+  filter(inwave5y == 1) %>%
+  drop_na(meduc3)
+wmcs5 <- svydesign(ids = ~1, data = mcs5, weights = ~ mcs5$wgt5y)
+
+## Tasks sample 
+
+elfewhodoes <- elfe5 %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes <- svydesign(ids = ~1, data = elfewhodoes, weights = ~ elfewhodoes$wgt5y)
+
+mcswhodoes <- mcs5 %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes <- svydesign(ids = ~1, data = mcswhodoes, weights = ~ mcswhodoes$wgt5y)
+
+# Attitudes expectations sample 
+
+elfeexpect <- elfe5 %>% 
+  drop_na(socialsuccess2m, lovelife2m, interestingjob2m, passion2m, calmlife2m, bigfamily2m, lotsoffriends2m, fairerworld2m, goodhealth2m, otherwish2m)
+welfeexpect <- svydesign(ids = ~1, data = elfeexpect, weights = ~ elfeexpect$wgt5y)
+
+mcsexpect <- mcs5 %>%
+  drop_na(independence3y, obedience3y, negotiation3y, respectelders3y, dowellatschool3y, instillreligiousvalues3y,
+           bewellliked3y, thinkforself3y, workhard3y, helpothers3y, obeyparents3y, qualityreligiousvalues3y)
+wmcsexpect <- svydesign(ids = ~1, data = mcsexpect, weights = ~ mcsexpect$wgt5y)
+
+# Children's access to resources
+
+elferesources <- elfe5 %>% 
+  drop_na(frpaint3y, frread3y, music3y, readplus3y, frcounting3y, writing3y, puzzle3y, anyactivity3y,
+          swimming3y, gymnastics3y, circus3y, sportsinit3y, musicclass3y, danceclass3y, visualarts3y, horseriding3y)
+welferesources <- svydesign(ids = ~1, data = elferesources, weights = ~ elferesources$wgt5y)
+
+mcsresources <- mcs5 %>%
+  drop_na(read3y, library3y, counting3y, songs3y, alphabet3y, paint3y, physical3y,
+          read5y, stories5y, songs5y, paint5y, physical5y, indoor5y, park5y)
+wmcsresources <- svydesign(ids = ~1, data = mcsresources, weights = ~ mcsresources$wgt5y)
+
+# Factorised (for plots)
+
+elfe5_fact <- elfe5 %>%
+  mutate(across(-c(wgt1y, wgt2y, wgt3y, wgt5y), as.factor))
+
+mcs5_fact <- mcs5 %>% 
+  mutate(across(-c(wgt9m, wgt3y, wgt5y), as_factor))
+
+for(i in c("sex")) {
+  levels(elfe5_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("sex")) {
+  levels(mcs5_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("meduc3")) {
+  levels(elfe5_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc3")) {
+  levels(mcs5_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc")) {
+  levels(elfe5_fact[, i]) <- c("<=bepc",  "cap-bep", "bac", "bac+2", "bac+3/4", ">bac+4")
+}
+
+for(i in c("meduc")) {
+  levels(mcs5_fact[, i]) <- c("None", "Other", "GCSE D-G", "GCSE A-C", "Trade", "A-level", "HE below deg", "Bach", "Higher deg")
+}
+
+for(i in c("famstr2m", "famstr1y", "famstr2y", "famstr3y", "famstr5y")) {
+  levels(elfe5_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("famstr9m", "famstr3y", "famstr5y")) {
+  levels(mcs5_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("twopar2m", "twopar1y", "twopar2y", "twopar3y", "twopar5y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar9m", "twopar3y", "twopar5y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Role modelling ####
+
+for(i in c("nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3")) {
+  levels(elfe5_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3")) {
+  levels(mcs5_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("leave")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave2m", "leave1y", "leave2y", "leave3y")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave9m", "leave3y")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp2m", "emp1y", "emp2y", "emp3y", "emp5y")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp9m", "emp3y")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("mpartemp9m", "fpartemp9m", "mpartemp3y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Attitudes expectations ####
+
+for(i in c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y",
+           "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Children's access to resources ####
+
+for(i in c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y",
+           "anyactivity3y",
+           "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+           "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
+}
+
+for(i in c("fqlibrary3y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "On special occasions", "Once a month", "Once a fortnight", "Once a week")
+}
+
+for(i in c("fqread3y", "fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day")
+}
+
+# Role modelling sample 
+
+elfewhodoes_fact <- elfe5_fact %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes_fact <- svydesign(ids = ~1, data = elfewhodoes_fact, weights = ~ elfewhodoes_fact$wgt5y)
+
+mcswhodoes_fact <- mcs5_fact %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes_fact <- svydesign(ids = ~1, data = mcswhodoes_fact, weights = ~ mcswhodoes_fact$wgt5y)
+
+# Attitudes expectations sample 
+
+elfeexpect_fact <- elfe5_fact %>% 
+  drop_na(socialsuccess2m, lovelife2m, interestingjob2m, passion2m, calmlife2m, bigfamily2m, lotsoffriends2m, fairerworld2m, goodhealth2m, otherwish2m)
+welfeexpect_fact <- svydesign(ids = ~1, data = elfeexpect_fact, weights = ~ elfeexpect_fact$wgt5y)
+
+mcsexpect_fact <- mcs5_fact %>%
+  drop_na(independence3y, obedience3y, negotiation3y, respectelders3y, dowellatschool3y, instillreligiousvalues3y,
+           bewellliked3y, thinkforself3y, workhard3y, helpothers3y, obeyparents3y, qualityreligiousvalues3y)
+wmcsexpect_fact <- svydesign(ids = ~1, data = mcsexpect_fact, weights = ~ mcsexpect_fact$wgt5y)
+
+# Children's access to resources
+
+elferesources_fact <- elfe5_fact %>% 
+  drop_na(frpaint3y, frread3y, music3y, readplus3y, frcounting3y, writing3y, puzzle3y, anyactivity3y,
+          swimming3y, gymnastics3y, circus3y, sportsinit3y, musicclass3y, danceclass3y, visualarts3y, horseriding3y)
+welferesources_fact <- svydesign(ids = ~1, data = elferesources_fact, weights = ~ elferesources_fact$wgt5y)
+
+mcsresources_fact <- mcs5_fact %>%
+  drop_na(read3y, library3y, counting3y, songs3y, alphabet3y, paint3y, physical3y,
+          read5y, stories5y, songs5y, paint5y, physical5y, indoor5y, park5y)
+wmcsresources_fact <- svydesign(ids = ~1, data = mcsresources_fact, weights = ~ mcsresources_fact$wgt5y)
+
+
+```
+
+# Role modelling ####
+
+```{r}
+
+elfe_doctor <- lm(doctor2m3 ~ sex, elfewhodoes)
+elfe_nappies <- lm(nappies2m3 ~ sex, elfewhodoes)
+elfe_laundry <- lm(laundry2m3 ~ sex, elfewhodoes)
+elfe_night <- lm(night2m3 ~ sex, elfewhodoes)
+elfe_clean <- lm(clean2m3 ~ sex, elfewhodoes)
+elfe_cook <- lm(cook2m3 ~ sex, elfewhodoes)
+elfe_diy <- lm(diy2m3 ~ sex, elfewhodoes)
+
+mcs_doctor <- lm(doctor9m3 ~ sex, mcswhodoes)
+mcs_nappies <- lm(nappies9m3 ~ sex, mcswhodoes)
+mcs_laundry <- lm(laundry9m3 ~ sex, mcswhodoes)
+mcs_night <- lm(night9m3 ~ sex, mcswhodoes)
+mcs_clean <- lm(clean9m3 ~ sex, mcswhodoes)
+mcs_cook <- lm(cook9m3 ~ sex, mcswhodoes)
+mcs_diy <- lm(diy9m3 ~ sex, mcswhodoes)
+
+coef_df <- rbind(
+  extract_coef(elfe_doctor, "doctor2m3", "France"),
+  extract_coef(elfe_nappies, "nappies2m3", "France"),
+  extract_coef(elfe_laundry, "laundry2m3", "France"),
+  extract_coef(elfe_night, "night2m3", "France"),
+  extract_coef(elfe_clean, "clean2m3", "France"),
+  extract_coef(elfe_cook, "cook2m3", "France"),
+  extract_coef(elfe_diy, "diy2m3", "France"),
+  extract_coef(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef(mcs_night, "night9m3", "UK"),
+  extract_coef(mcs_clean, "clean9m3", "UK"),
+  extract_coef(mcs_cook, "cook9m3", "UK"),
+  extract_coef(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 11.4,
+  estimate = 0.035,
+  label = "More often done\n by fathers\n for daugthers",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 10,
+  estimate = 0.02,
+  yend = 0.05,
+  country = "UK"
+)
+
+acoef <- ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "... Irrespective of having a son\n or a daughter",
+    x = "",
+    y = "Coefficient for child sex",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) +
+  geom_segment(
+    data = segment_df,
+    aes(xend = model, yend = yend),  # same x (model), change y (estimate)
+    arrow = arrow(type = "closed", length = unit(0.04, "npc")), color = rev(viridis(1, option = "D"))
+  )
+
+
+```
+
+```{r fig.height = 4.5}
+
+vars <- c("doctor2m3", "nappies2m3", "laundry2m3", 
+          "night2m3", "clean2m3", "cook2m3", "diy2m3")
+
+df_long <- elfewhodoes_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") 
+
+# %>%
+  # mutate(Response = factor(Response, levels = c("Mother mostly", "Father mostly", "Balanced")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+father_order <- df_weighted %>%
+  filter(Response == "Father mostly") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = father_order))
+
+afr <-
+  ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "Fathers do less...",
+    x = "France (N = 8 866)", 
+    y = "",
+    fill = "Response"
+  ) +
+  theme_minimal(base_size = 3) +
+  scale_fill_manual(values = rev(viridis(3, option = "D"))) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.margin = margin(5, 5, 0, 5),
+    plot.title = element_text(size = 11, face = "bold")) +
+  annotate("text", x = 7, y = 0.69, label = "Mother mostly", col = "black", size = 9/.pt) +
+  annotate("text", x = 7, y = 0.1865, label = "Balanced", col = "white", size = 9/.pt) +
+  annotate("text", x = 8.5, y = 0.003, label = "Father mostly", col = "black", size = 9/.pt) +
+  annotate("segment", x = 8, y = 0.003, xend = 7.5, yend = 0.003, 
+         arrow = arrow(type = "closed", length = unit(0.02, "npc")))
+
+vars <- c("doctor9m3", "nappies9m3", "laundry9m3", 
+          "night9m3", "clean9m3", "cook9m3", "diy9m3")
+
+df_long <- mcswhodoes_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("Mother mostly", "Father mostly", "Balanced")),
+    Task = factor(Task, levels = rev(c("doctor9m3", "nappies9m3", "night9m3", "laundry9m3", "clean9m3", "cook9m3", "diy9m3")))
+  )
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+father_order <- df_weighted %>%
+  filter(Response == "Father mostly") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = father_order))
+
+auk <- ggplot(df_long, aes(x = Task, fill = Response)) +
+  geom_bar(position = "fill") +
+  coord_flip(clip = "off") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = rev(viridis(3, option = "D"))) +
+  labs(
+    x = "UK (N = 8 692)",
+    y = "Responsibility for tasks",
+    fill = "Response"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    plot.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(size = 9),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    plot.margin = margin(0, 5, 5, 5),
+    axis.title.y = element_text(size = 10)
+  )
+
+adist <- afr / auk
+
+plot <- adist | acoef
+
+ggsave("rolemodeling.png", plot = plot, width = 6.8, height = 4.5)
+
+plot
+
+```
+
+# Attitudes expectations ####
+
+```{r}
+
+elfe_socialsuccess <- lm(socialsuccess2m ~ sex, elfeexpect)
+elfe_lovelife <- lm(lovelife2m ~ sex, elfeexpect)
+elfe_interestingjob <- lm(interestingjob2m ~ sex, elfeexpect)
+elfe_passion <- lm(passion2m ~ sex, elfeexpect)
+elfe_calmlife <- lm(calmlife2m ~ sex, elfeexpect)
+elfe_bigfamily <- lm(bigfamily2m ~ sex, elfeexpect)
+elfe_lotsoffriends <- lm(lotsoffriends2m ~ sex, elfeexpect)
+elfe_fairerworld <- lm(fairerworld2m ~ sex, elfeexpect)
+elfe_goodhealth <- lm(goodhealth2m ~ sex, elfeexpect)
+
+mcs_independence <- lm(independence3y ~ sex, mcsexpect)
+mcs_obedience <- lm(obedience3y ~ sex, mcsexpect)
+mcs_negotiation <- lm(negotiation3y ~ sex, mcsexpect)
+mcs_respectelders <- lm(respectelders3y ~ sex, mcsexpect)
+mcs_dowellatschool <- lm(dowellatschool3y ~ sex, mcsexpect)
+mcs_instillreligious <- lm(instillreligiousvalues3y ~ sex, mcsexpect)
+mcs_bewellliked <- lm(bewellliked3y ~ sex, mcsexpect)
+mcs_thinkforself <- lm(thinkforself3y ~ sex, mcsexpect)
+mcs_workhard <- lm(workhard3y ~ sex, mcsexpect)
+mcs_helpothers <- lm(helpothers3y ~ sex, mcsexpect)
+mcs_obeyparents <- lm(obeyparents3y ~ sex, mcsexpect)
+mcs_qualityreligious <- lm(qualityreligiousvalues3y ~ sex, mcsexpect)
+
+coef_df <- rbind(
+  extract_coef(elfe_socialsuccess, "socialsuccess2m", "France"),
+  extract_coef(elfe_lovelife, "lovelife2m", "France"),
+  extract_coef(elfe_interestingjob, "interestingjob2m", "France"),
+  extract_coef(elfe_passion, "passion2m", "France"),
+  extract_coef(elfe_calmlife, "calmlife2m", "France"),
+  extract_coef(elfe_bigfamily, "bigfamily2m", "France"),
+  extract_coef(elfe_lotsoffriends, "lotsoffriends2m", "France"),
+  extract_coef(elfe_fairerworld, "fairerworld2m", "France"),
+  extract_coef(elfe_goodhealth, "goodhealth2m", "France"),
+  extract_coef(mcs_independence, "independence3y", "UK"),
+  extract_coef(mcs_obedience, "obedience3y", "UK"),
+  extract_coef(mcs_negotiation, "negotiation3y", "UK"),
+  extract_coef(mcs_respectelders, "respectelders3y", "UK"),
+  extract_coef(mcs_dowellatschool, "dowellatschool3y", "UK"),
+  extract_coef(mcs_instillreligious, "instillreligiousvalues3y", "UK"),
+  extract_coef(mcs_bewellliked, "bewellliked3y", "UK"),
+  extract_coef(mcs_thinkforself, "thinkforself3y", "UK"),
+  extract_coef(mcs_workhard, "workhard3y", "UK"),
+  extract_coef(mcs_helpothers, "helpothers3y", "UK"),
+  extract_coef(mcs_obeyparents, "obeyparents3y", "UK"),
+  extract_coef(mcs_qualityreligious, "qualityreligiousvalues3y", "UK")
+)
+
+france_order <- c("goodhealth2m", "interestingjob2m", "socialsuccess2m", "lovelife2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "passion2m")
+uk_order <- c("respectelders3y", "independence3y", "dowellatschool3y", "obedience3y", "negotiation3y", "helpothers3y", "thinkforself3y", "workhard3y", "instillreligiousvalues3y", "obeyparents3y", "bewellliked3y", "qualityreligiousvalues3y")
+model_levels <- c(uk_order, france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 17,
+  estimate = 0.02,
+  label = "More yes's\n for girls",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 16,
+  estimate = 0.01,
+  yend = 0.03,
+  country = "UK"
+)
+
+acoef <- ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "More differences in terms\n of expectations",
+    x = "",
+    y = "Coefficient for child sex",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none") +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) +
+  geom_segment(
+    data = segment_df,
+    aes(xend = model, yend = yend), 
+    arrow = arrow(type = "closed", length = unit(0.04, "npc")), color = rev(viridis(1, option = "D"))
+  )
+
+```
+
+
+```{r fig.height = 6}
+
+vars <- c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m")
+
+df_long <- elfeexpect_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("No", "Yes")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+yes_order <- df_weighted %>%
+  filter(Response == "Yes") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = yes_order))
+
+afr <-
+  
+  ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "Wish for the child,\nvalues to instill:",
+    x = "France (N = 10 957)",
+    y = "",
+    fill = "Response"
+  ) +
+  theme_minimal(base_size = 3) +
+  scale_fill_manual(values = rev(viridis(2, option = "D"))) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.margin = margin(5, 5, 0, 5),
+    plot.title = element_text(size = 11, face = "bold")) +
+  annotate("text", x = 9, y = 0.534, label = "No", col = "black", size = 9/.pt) +
+  annotate("text", x = 10.5, y = 0.034, label = "Yes", col = "black", size = 9/.pt) +
+  annotate("segment", x = 10, y = 0.034, xend = 9.5, yend = 0.034, 
+         arrow = arrow(type = "closed", length = unit(0.02, "npc")))
+
+
+
+vars <- c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y",
+                "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y")
+
+df_long <- mcsexpect_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("No", "Yes")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+yes_order <- df_weighted %>%
+  filter(Response == "Yes") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = yes_order))
+
+auk <- 
+  ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "",
+    x = "UK (N = 12 641)",
+    y = "Wish for the child",
+    fill = "Response"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = rev(viridis(2, option = "D"))) +
+  theme_minimal(base_size = 3) +
+  theme(
+    plot.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_text(size = 9),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    plot.margin = margin(0, 5, 5, 5),
+    axis.title.y = element_text(size = 10)
+  )
+
+adist <- afr / auk + plot_layout(heights = c(0.75, 1))
+
+plot <- adist | acoef
+
+ggsave("attitudes.png", plot = plot, width = 6.8, height = 6)
+
+plot
+
+```
+
+# Children's access to resources ####
+
+```{r}
+
+elfe_paint3y <- lm(frpaint3y ~ sex, elferesources)
+elfe_read3y <- lm(frread3y ~ sex, elferesources)
+elfe_music3y <- lm(music3y ~ sex, elferesources)
+elfe_readplus3y <- lm(readplus3y ~ sex, elferesources)
+elfe_counting3y <- lm(frcounting3y ~ sex, elferesources)
+elfe_writing3y <- lm(writing3y ~ sex, elferesources)
+elfe_puzzle3y <- lm(puzzle3y ~ sex, elferesources)
+elfe_anyactivity3y <- lm(anyactivity3y ~ sex, elferesources)
+elfe_swimming3y <- lm(swimming3y ~ sex, elferesources)
+elfe_gymnastics3y <- lm(gymnastics3y ~ sex, elferesources)
+elfe_circus3y <- lm(circus3y ~ sex, elferesources)
+elfe_sportsinit3y <- lm(sportsinit3y ~ sex, elferesources)
+elfe_musicclass3y <- lm(musicclass3y ~ sex, elferesources)
+elfe_danceclass3y <- lm(danceclass3y ~ sex, elferesources)
+elfe_visualarts3y <- lm(visualarts3y ~ sex, elferesources)
+elfe_horseriding3y <- lm(horseriding3y ~ sex, elferesources)
+
+mcs_read3y <- lm(read3y ~ sex, mcsresources)
+mcs_library3y <- lm(library3y ~ sex, mcsresources)
+mcs_counting3y <- lm(counting3y ~ sex, mcsresources)
+mcs_songs3y <- lm(songs3y ~ sex, mcsresources)
+mcs_alphabet3y <- lm(alphabet3y ~ sex, mcsresources)
+mcs_paint3y <- lm(paint3y ~ sex, mcsresources)
+mcs_physical3y <- lm(physical3y ~ sex, mcsresources)
+mcs_read5y <- lm(read5y ~ sex, mcsresources)
+mcs_stories5y <- lm(stories5y ~ sex, mcsresources)
+mcs_songs5y <- lm(songs5y ~ sex, mcsresources)
+mcs_paint5y <- lm(paint5y ~ sex, mcsresources)
+mcs_physical5y <- lm(physical5y ~ sex, mcsresources)
+mcs_indoor5y <- lm(indoor5y ~ sex, mcsresources)
+mcs_park5y <- lm(park5y ~ sex, mcsresources)
+
+coef_df <- rbind(
+  extract_coef(elfe_paint3y, "frpaint3y", "France"),
+  extract_coef(elfe_read3y, "frread3y", "France"),
+  extract_coef(elfe_music3y, "music3y", "France"),
+  extract_coef(elfe_readplus3y, "readplus3y", "France"),
+  extract_coef(elfe_counting3y, "frcounting3y", "France"),
+  extract_coef(elfe_writing3y, "writing3y", "France"),
+  extract_coef(elfe_puzzle3y, "puzzle3y", "France"),
+  extract_coef(elfe_anyactivity3y, "anyactivity3y", "France"),
+  extract_coef(elfe_swimming3y, "swimming3y", "France"),
+  extract_coef(elfe_gymnastics3y, "gymnastics3y", "France"),
+  extract_coef(elfe_circus3y, "circus3y", "France"),
+  extract_coef(elfe_sportsinit3y, "sportsinit3y", "France"),
+  extract_coef(elfe_musicclass3y, "musicclass3y", "France"),
+  extract_coef(elfe_danceclass3y, "danceclass3y", "France"),
+  extract_coef(elfe_visualarts3y, "visualarts3y", "France"),
+  extract_coef(elfe_horseriding3y, "horseriding3y", "France"),
+  extract_coef(mcs_read3y, "read3y", "UK"),
+  extract_coef(mcs_library3y, "library3y", "UK"),
+  extract_coef(mcs_counting3y, "counting3y", "UK"),
+  extract_coef(mcs_songs3y, "songs3y", "UK"),
+  extract_coef(mcs_alphabet3y, "alphabet3y", "UK"),
+  extract_coef(mcs_paint3y, "paint3y", "UK"),
+  extract_coef(mcs_physical3y, "physical3y", "UK"),
+  extract_coef(mcs_read5y, "read5y", "UK"),
+  extract_coef(mcs_stories5y, "stories5y", "UK"),
+  extract_coef(mcs_songs5y, "songs5y", "UK"),
+  extract_coef(mcs_paint5y, "paint5y", "UK"),
+  extract_coef(mcs_physical5y, "physical5y", "UK"),
+  extract_coef(mcs_indoor5y, "indoor5y", "UK"),
+  extract_coef(mcs_park5y, "park5y", "UK")
+)
+
+france_order <- c("circus3y", "visualarts3y", "horseriding3y", "musicclass3y", "danceclass3y", "swimming3y", "sportsinit3y", "gymnastics3y", "anyactivity3y",
+                  "writing3y", "readplus3y", "puzzle3y", "frcounting3y", "frpaint3y", "frread3y", "music3y")
+uk_order <- c("library3y", "physical3y", "alphabet3y", "songs3y", "counting3y", "paint3y", "read3y",
+              "stories5y", "physical5y", "paint5y", "park5y", "songs5y", "indoor5y", "read5y")
+model_levels <- c(rev(uk_order), rev(france_order))
+
+model_levels <- c(rev(uk_order), rev(france_order))
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 23,
+  estimate = 0.075,
+  label = "More yes's\n for girls",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 22,
+  estimate = 0.05,
+  yend = 0.1,
+  country = "UK"
+)
+
+acoef <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Slightly more for girls\n except for some physical\n activities",
+    x = "",
+    y = "Coefficient for child sex",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none") +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) +
+  geom_segment(
+    data = segment_df,
+    aes(xend = model, yend = yend), 
+    arrow = arrow(type = "closed", length = unit(0.04, "npc")), color = rev(viridis(1, option = "D"))
+  )
+
+
+```
+
+
+```{r fig.height = 8}
+
+vars <- c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y", "anyactivity3y",
+          "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")
+
+df_long <- elferesources_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("No", "Yes")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+yes_order <- df_weighted %>%
+  filter(Response == "Yes") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = yes_order))
+
+afr <-
+  ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "Uptake of activities:",
+    x = "France (N = 10 593)",
+    y = "",
+    fill = "Response"
+  ) +
+  theme_minimal(base_size = 3) +
+  scale_fill_manual(values = rev(viridis(2, option = "D"))) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.margin = margin(5, 5, 0, 5),
+    plot.title = element_text(size = 11, face = "bold")) +
+  annotate("text", x = 16, y = 0.5, label = "No", col = "black", size = 9/.pt) +
+  annotate("text", x = 17.5, y = 0.001, label = "Yes", col = "black", size = 9/.pt) +
+  annotate("segment", x = 17, y = 0.001, xend = 16.5, yend = 0.001, 
+         arrow = arrow(type = "closed", length = unit(0.02, "npc")))
+
+
+vars <- c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+          "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")
+
+df_long <- mcsresources_fact %>%
+  pivot_longer(cols = all_of(vars), names_to = "Task", values_to = "Response") %>%
+  mutate(Response = factor(Response, levels = c("No", "Yes")))
+
+wdf_long <- df_long %>%
+  as_survey_design(weights = wgt5y)
+
+df_weighted <- wdf_long %>%
+  group_by(Task, Response) %>%
+  summarise(prop = survey_mean(na.rm = TRUE), .groups = "drop")
+
+yes_order <- df_weighted %>%
+  filter(Response == "Yes") %>%
+  arrange(desc(prop)) %>%
+  pull(Task)
+
+df_weighted <- df_weighted %>%
+  mutate(Task = factor(Task, levels = yes_order))
+
+auk3 <-
+  ggplot(df_weighted, aes(x = Task, y = prop, fill = Response)) +
+  geom_col(position = "fill") +
+  coord_flip(clip = "off") + 
+  labs(
+    title = "",
+    x = "UK (N = 12 641)",
+    y = "",
+    fill = "Response"
+  ) +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = rev(viridis(2, option = "D"))) +
+  theme_minimal(base_size = 3) +
+  theme(
+    plot.title = element_blank(),
+    legend.position = "none",
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    plot.margin = margin(0, 5, 0, 5))
+
+adist <-
+  
+  afr / auk3 + plot_layout(heights = c(.53, .47))
+
+plot <- adist | acoef
+
+ggsave("resources.png", plot = plot, width = 6.8, height = 8)
+
+plot
+
+```
+
+# Checking for social class differences ####
+
+```{r}
+elfe_doctor <- lm(doctor2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_nappies <- lm(nappies2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_laundry <- lm(laundry2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_night <- lm(night2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_clean <- lm(clean2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_cook <- lm(cook2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+elfe_diy <- lm(diy2m3 ~ sex*as.factor(meduc3), elfewhodoes)
+
+mcs_doctor <- lm(doctor9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_nappies <- lm(nappies9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_laundry <- lm(laundry9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_night <- lm(night9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_clean <- lm(clean9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_cook <- lm(cook9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+mcs_diy <- lm(diy9m3 ~ sex*as.factor(meduc3), mcswhodoes)
+
+elfe_socialsuccess <- lm(socialsuccess2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_lovelife <- lm(lovelife2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_interestingjob <- lm(interestingjob2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_passion <- lm(passion2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_calmlife <- lm(calmlife2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_bigfamily <- lm(bigfamily2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_lotsoffriends <- lm(lotsoffriends2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_fairerworld <- lm(fairerworld2m ~ sex*as.factor(meduc3), elfeexpect)
+elfe_goodhealth <- lm(goodhealth2m ~ sex*as.factor(meduc3), elfeexpect)
+
+mcs_independence <- lm(independence3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_obedience <- lm(obedience3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_negotiation <- lm(negotiation3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_respectelders <- lm(respectelders3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_dowellatschool <- lm(dowellatschool3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_instillreligious <- lm(instillreligiousvalues3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_bewellliked <- lm(bewellliked3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_thinkforself <- lm(thinkforself3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_workhard <- lm(workhard3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_helpothers <- lm(helpothers3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_obeyparents <- lm(obeyparents3y ~ sex*as.factor(meduc3), mcsexpect)
+mcs_qualityreligious <- lm(qualityreligiousvalues3y ~ sex*as.factor(meduc3), mcsexpect)
+
+elfe_paint3y <- lm(frpaint3y ~ sex*as.factor(meduc3), elferesources)
+elfe_read3y <- lm(frread3y ~ sex*as.factor(meduc3), elferesources)
+elfe_music3y <- lm(music3y ~ sex*as.factor(meduc3), elferesources)
+elfe_readplus3y <- lm(readplus3y ~ sex*as.factor(meduc3), elferesources)
+elfe_counting3y <- lm(frcounting3y ~ sex*as.factor(meduc3), elferesources)
+elfe_writing3y <- lm(writing3y ~ sex*as.factor(meduc3), elferesources)
+elfe_puzzle3y <- lm(puzzle3y ~ sex*as.factor(meduc3), elferesources)
+elfe_anyactivity3y <- lm(anyactivity3y ~ sex*as.factor(meduc3), elferesources)
+elfe_swimming3y <- lm(swimming3y ~ sex*as.factor(meduc3), elferesources)
+elfe_gymnastics3y <- lm(gymnastics3y ~ sex*as.factor(meduc3), elferesources)
+elfe_circus3y <- lm(circus3y ~ sex*as.factor(meduc3), elferesources)
+elfe_sportsinit3y <- lm(sportsinit3y ~ sex*as.factor(meduc3), elferesources)
+elfe_musicclass3y <- lm(musicclass3y ~ sex*as.factor(meduc3), elferesources)
+elfe_danceclass3y <- lm(danceclass3y ~ sex*as.factor(meduc3), elferesources)
+elfe_visualarts3y <- lm(visualarts3y ~ sex*as.factor(meduc3), elferesources)
+elfe_horseriding3y <- lm(horseriding3y ~ sex*as.factor(meduc3), elferesources)
+
+mcs_read3y <- lm(read3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_library3y <- lm(library3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_counting3y <- lm(counting3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_songs3y <- lm(songs3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_alphabet3y <- lm(alphabet3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_paint3y <- lm(paint3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_physical3y <- lm(physical3y ~ sex*as.factor(meduc3), mcsresources)
+mcs_read5y <- lm(read5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_stories5y <- lm(stories5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_songs5y <- lm(songs5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_paint5y <- lm(paint5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_physical5y <- lm(physical5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_indoor5y <- lm(indoor5y ~ sex*as.factor(meduc3), mcsresources)
+mcs_park5y <- lm(park5y ~ sex*as.factor(meduc3), mcsresources)
+
+```
+
+
+```{r}
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_doctor, "doctor2m3", "France"),
+  extract_coef_edu(elfe_nappies, "nappies2m3", "France"),
+  extract_coef_edu(elfe_laundry, "laundry2m3", "France"),
+  extract_coef_edu(elfe_night, "night2m3", "France"),
+  extract_coef_edu(elfe_clean, "clean2m3", "France"),
+  extract_coef_edu(elfe_cook, "cook2m3", "France"),
+  extract_coef_edu(elfe_diy, "diy2m3", "France"),
+  extract_coef_edu(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef_edu(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef_edu(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef_edu(mcs_night, "night9m3", "UK"),
+  extract_coef_edu(mcs_clean, "clean9m3", "UK"),
+  extract_coef_edu(mcs_cook, "cook9m3", "UK"),
+  extract_coef_edu(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 11.4,
+  estimate = 0.035,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 10,
+  estimate = 0.02,
+  yend = 0.05,
+  country = "UK"
+)
+
+
+acoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Role modelling",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+  
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_socialsuccess, "socialsuccess2m", "France"),
+  extract_coef_edu(elfe_lovelife, "lovelife2m", "France"),
+  extract_coef_edu(elfe_interestingjob, "interestingjob2m", "France"),
+  extract_coef_edu(elfe_passion, "passion2m", "France"),
+  extract_coef_edu(elfe_calmlife, "calmlife2m", "France"),
+  extract_coef_edu(elfe_bigfamily, "bigfamily2m", "France"),
+  extract_coef_edu(elfe_lotsoffriends, "lotsoffriends2m", "France"),
+  extract_coef_edu(elfe_fairerworld, "fairerworld2m", "France"),
+  extract_coef_edu(elfe_goodhealth, "goodhealth2m", "France"),
+  extract_coef_edu(mcs_independence, "independence3y", "UK"),
+  extract_coef_edu(mcs_obedience, "obedience3y", "UK"),
+  extract_coef_edu(mcs_negotiation, "negotiation3y", "UK"),
+  extract_coef_edu(mcs_respectelders, "respectelders3y", "UK"),
+  extract_coef_edu(mcs_dowellatschool, "dowellatschool3y", "UK"),
+  extract_coef_edu(mcs_instillreligious, "instillreligiousvalues3y", "UK"),
+  extract_coef_edu(mcs_bewellliked, "bewellliked3y", "UK"),
+  extract_coef_edu(mcs_thinkforself, "thinkforself3y", "UK"),
+  extract_coef_edu(mcs_workhard, "workhard3y", "UK"),
+  extract_coef_edu(mcs_helpothers, "helpothers3y", "UK"),
+  extract_coef_edu(mcs_obeyparents, "obeyparents3y", "UK"),
+  extract_coef_edu(mcs_qualityreligious, "qualityreligiousvalues3y", "UK")
+)
+
+france_order <- c("goodhealth2m", "interestingjob2m", "socialsuccess2m", "lovelife2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "passion2m")
+uk_order <- c("respectelders3y", "independence3y", "dowellatschool3y", "obedience3y", "negotiation3y", "helpothers3y", "thinkforself3y", "workhard3y", "instillreligiousvalues3y", "obeyparents3y", "bewellliked3y", "qualityreligiousvalues3y")
+model_levels <- c(uk_order, france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 17,
+  estimate = 0.02,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 16,
+  estimate = 0.01,
+  yend = 0.03,
+  country = "UK"
+)
+
+bcoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Attitudes and expectations",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_paint3y, "frpaint3y", "France"),
+  extract_coef_edu(elfe_read3y, "frread3y", "France"),
+  extract_coef_edu(elfe_music3y, "music3y", "France"),
+  extract_coef_edu(elfe_readplus3y, "readplus3y", "France"),
+  extract_coef_edu(elfe_counting3y, "frcounting3y", "France"),
+  extract_coef_edu(elfe_writing3y, "writing3y", "France"),
+  extract_coef_edu(elfe_puzzle3y, "puzzle3y", "France"),
+  extract_coef_edu(elfe_anyactivity3y, "anyactivity3y", "France"),
+  extract_coef_edu(elfe_swimming3y, "swimming3y", "France"),
+  extract_coef_edu(elfe_gymnastics3y, "gymnastics3y", "France"),
+  extract_coef_edu(elfe_circus3y, "circus3y", "France"),
+  extract_coef_edu(elfe_sportsinit3y, "sportsinit3y", "France"),
+  extract_coef_edu(elfe_musicclass3y, "musicclass3y", "France"),
+  extract_coef_edu(elfe_danceclass3y, "danceclass3y", "France"),
+  extract_coef_edu(elfe_visualarts3y, "visualarts3y", "France"),
+  extract_coef_edu(elfe_horseriding3y, "horseriding3y", "France"),
+  extract_coef_edu(mcs_read3y, "read3y", "UK"),
+  extract_coef_edu(mcs_library3y, "library3y", "UK"),
+  extract_coef_edu(mcs_counting3y, "counting3y", "UK"),
+  extract_coef_edu(mcs_songs3y, "songs3y", "UK"),
+  extract_coef_edu(mcs_alphabet3y, "alphabet3y", "UK"),
+  extract_coef_edu(mcs_paint3y, "paint3y", "UK"),
+  extract_coef_edu(mcs_physical3y, "physical3y", "UK"),
+  extract_coef_edu(mcs_read5y, "read5y", "UK"),
+  extract_coef_edu(mcs_stories5y, "stories5y", "UK"),
+  extract_coef_edu(mcs_songs5y, "songs5y", "UK"),
+  extract_coef_edu(mcs_paint5y, "paint5y", "UK"),
+  extract_coef_edu(mcs_physical5y, "physical5y", "UK"),
+  extract_coef_edu(mcs_indoor5y, "indoor5y", "UK"),
+  extract_coef_edu(mcs_park5y, "park5y", "UK")
+)
+
+france_order <- c("anyactivity3y", "writing3y", "readplus3y", "puzzle3y", "frcounting3y", "frpaint3y", "frread3y", "music3y",
+                  "circus3y", "visualarts3y", "horseriding3y", "musicclass3y", "danceclass3y", "swimming3y", "sportsinit3y", "gymnastics3y")
+uk_order <- c("library3y", "physical3y", "alphabet3y", "songs3y", "counting3y", "paint3y", "read3y",
+              "stories5y", "physical5y", "paint5y", "park5y", "songs5y", "indoor5y", "read5y")
+model_levels <- c(rev(uk_order), rev(france_order))
+
+model_levels <- c(rev(uk_order), rev(france_order))
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 23,
+  estimate = 0.075,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 22,
+  estimate = 0.05,
+  yend = 0.1,
+  country = "UK"
+)
+
+ccoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Children's access to resources",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+acoef1 | bcoef1 | ccoef1
+
+```
+
+
+
+
+```{r}
+
+coef_df <- rbind(
+  extract_coef_int(elfe_doctor, "doctor2m3", "France"),
+  extract_coef_int(elfe_nappies, "nappies2m3", "France"),
+  extract_coef_int(elfe_laundry, "laundry2m3", "France"),
+  extract_coef_int(elfe_night, "night2m3", "France"),
+  extract_coef_int(elfe_clean, "clean2m3", "France"),
+  extract_coef_int(elfe_cook, "cook2m3", "France"),
+  extract_coef_int(elfe_diy, "diy2m3", "France"),
+  extract_coef_int(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef_int(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef_int(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef_int(mcs_night, "night9m3", "UK"),
+  extract_coef_int(mcs_clean, "clean9m3", "UK"),
+  extract_coef_int(mcs_cook, "cook9m3", "UK"),
+  extract_coef_int(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 11.4,
+  estimate = 0.035,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 10,
+  estimate = 0.02,
+  yend = 0.05,
+  country = "UK"
+)
+
+
+acoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+  
+
+coef_df <- rbind(
+  extract_coef_int(elfe_socialsuccess, "socialsuccess2m", "France"),
+  extract_coef_int(elfe_lovelife, "lovelife2m", "France"),
+  extract_coef_int(elfe_interestingjob, "interestingjob2m", "France"),
+  extract_coef_int(elfe_passion, "passion2m", "France"),
+  extract_coef_int(elfe_calmlife, "calmlife2m", "France"),
+  extract_coef_int(elfe_bigfamily, "bigfamily2m", "France"),
+  extract_coef_int(elfe_lotsoffriends, "lotsoffriends2m", "France"),
+  extract_coef_int(elfe_fairerworld, "fairerworld2m", "France"),
+  extract_coef_int(elfe_goodhealth, "goodhealth2m", "France"),
+  extract_coef_int(mcs_independence, "independence3y", "UK"),
+  extract_coef_int(mcs_obedience, "obedience3y", "UK"),
+  extract_coef_int(mcs_negotiation, "negotiation3y", "UK"),
+  extract_coef_int(mcs_respectelders, "respectelders3y", "UK"),
+  extract_coef_int(mcs_dowellatschool, "dowellatschool3y", "UK"),
+  extract_coef_int(mcs_instillreligious, "instillreligiousvalues3y", "UK"),
+  extract_coef_int(mcs_bewellliked, "bewellliked3y", "UK"),
+  extract_coef_int(mcs_thinkforself, "thinkforself3y", "UK"),
+  extract_coef_int(mcs_workhard, "workhard3y", "UK"),
+  extract_coef_int(mcs_helpothers, "helpothers3y", "UK"),
+  extract_coef_int(mcs_obeyparents, "obeyparents3y", "UK"),
+  extract_coef_int(mcs_qualityreligious, "qualityreligiousvalues3y", "UK")
+)
+
+france_order <- c("goodhealth2m", "interestingjob2m", "socialsuccess2m", "lovelife2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "passion2m")
+uk_order <- c("respectelders3y", "independence3y", "dowellatschool3y", "obedience3y", "negotiation3y", "helpothers3y", "thinkforself3y", "workhard3y", "instillreligiousvalues3y", "obeyparents3y", "bewellliked3y", "qualityreligiousvalues3y")
+model_levels <- c(uk_order, france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 17,
+  estimate = 0.02,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 16,
+  estimate = 0.01,
+  yend = 0.03,
+  country = "UK"
+)
+
+bcoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_int(elfe_paint3y, "frpaint3y", "France"),
+  extract_coef_int(elfe_read3y, "frread3y", "France"),
+  extract_coef_int(elfe_music3y, "music3y", "France"),
+  extract_coef_int(elfe_readplus3y, "readplus3y", "France"),
+  extract_coef_int(elfe_counting3y, "frcounting3y", "France"),
+  extract_coef_int(elfe_writing3y, "writing3y", "France"),
+  extract_coef_int(elfe_puzzle3y, "puzzle3y", "France"),
+  extract_coef_int(elfe_anyactivity3y, "anyactivity3y", "France"),
+  extract_coef_int(elfe_swimming3y, "swimming3y", "France"),
+  extract_coef_int(elfe_gymnastics3y, "gymnastics3y", "France"),
+  extract_coef_int(elfe_circus3y, "circus3y", "France"),
+  extract_coef_int(elfe_sportsinit3y, "sportsinit3y", "France"),
+  extract_coef_int(elfe_musicclass3y, "musicclass3y", "France"),
+  extract_coef_int(elfe_danceclass3y, "danceclass3y", "France"),
+  extract_coef_int(elfe_visualarts3y, "visualarts3y", "France"),
+  extract_coef_int(elfe_horseriding3y, "horseriding3y", "France"),
+  extract_coef_int(mcs_read3y, "read3y", "UK"),
+  extract_coef_int(mcs_library3y, "library3y", "UK"),
+  extract_coef_int(mcs_counting3y, "counting3y", "UK"),
+  extract_coef_int(mcs_songs3y, "songs3y", "UK"),
+  extract_coef_int(mcs_alphabet3y, "alphabet3y", "UK"),
+  extract_coef_int(mcs_paint3y, "paint3y", "UK"),
+  extract_coef_int(mcs_physical3y, "physical3y", "UK"),
+  extract_coef_int(mcs_read5y, "read5y", "UK"),
+  extract_coef_int(mcs_stories5y, "stories5y", "UK"),
+  extract_coef_int(mcs_songs5y, "songs5y", "UK"),
+  extract_coef_int(mcs_paint5y, "paint5y", "UK"),
+  extract_coef_int(mcs_physical5y, "physical5y", "UK"),
+  extract_coef_int(mcs_indoor5y, "indoor5y", "UK"),
+  extract_coef_int(mcs_park5y, "park5y", "UK")
+)
+
+france_order <- c("circus3y", "visualarts3y", "horseriding3y", "musicclass3y", "danceclass3y", "swimming3y", "sportsinit3y", "gymnastics3y", "anyactivity3y",
+                  "writing3y", "readplus3y", "puzzle3y", "frcounting3y", "frpaint3y", "frread3y", "music3y")
+uk_order <- c("library3y", "physical3y", "alphabet3y", "songs3y", "counting3y", "paint3y", "read3y",
+              "stories5y", "physical5y", "paint5y", "park5y", "songs5y", "indoor5y", "read5y")
+model_levels <- c(rev(uk_order), rev(france_order))
+
+model_levels <- c(rev(uk_order), rev(france_order))
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 23,
+  estimate = 0.075,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 22,
+  estimate = 0.05,
+  yend = 0.1,
+  country = "UK"
+)
+
+ccoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+plot1 <- acoef1 | acoef2
+plot2 <- bcoef1 | bcoef2 
+plot3 <- ccoef1 | ccoef2
+
+ggsave("interaction1.png", plot = plot1, width = 6.8, height = 4.5)
+ggsave("interaction2.png", plot = plot2, width = 6.8, height = 6)
+ggsave("interaction3.png", plot = plot3, width = 6.8, height = 8)
+
+# plot1
+# plot2
+# plot3
+
+
+```
+
+
+# Controlling for employment and m/paternity leave and family structure ####
+
+```{r}
+
+elfe_doctor <- lm(doctor2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_nappies <- lm(nappies2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_laundry <- lm(laundry2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_night <- lm(night2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_clean <- lm(clean2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_cook <- lm(cook2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+elfe_diy <- lm(diy2m3 ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfewhodoes)
+
+mcs_doctor <- lm(doctor9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_nappies <- lm(nappies9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_laundry <- lm(laundry9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_night <- lm(night9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_clean <- lm(clean9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_cook <- lm(cook9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+mcs_diy <- lm(diy9m3 ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcswhodoes)
+
+elfe_socialsuccess <- lm(socialsuccess2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_lovelife <- lm(lovelife2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_interestingjob <- lm(interestingjob2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_passion <- lm(passion2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_calmlife <- lm(calmlife2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_bigfamily <- lm(bigfamily2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_lotsoffriends <- lm(lotsoffriends2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_fairerworld <- lm(fairerworld2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+elfe_goodhealth <- lm(goodhealth2m ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elfeexpect)
+
+mcs_independence <- lm(independence3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_obedience <- lm(obedience3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_negotiation <- lm(negotiation3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_respectelders <- lm(respectelders3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_dowellatschool <- lm(dowellatschool3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_instillreligious <- lm(instillreligiousvalues3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_bewellliked <- lm(bewellliked3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_thinkforself <- lm(thinkforself3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_workhard <- lm(workhard3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_helpothers <- lm(helpothers3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_obeyparents <- lm(obeyparents3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+mcs_qualityreligious <- lm(qualityreligiousvalues3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsexpect)
+
+elfe_paint3y <- lm(frpaint3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_read3y <- lm(frread3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_music3y <- lm(music3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_readplus3y <- lm(readplus3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_counting3y <- lm(frcounting3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_writing3y <- lm(writing3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_puzzle3y <- lm(puzzle3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_anyactivity3y <- lm(anyactivity3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_swimming3y <- lm(swimming3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_gymnastics3y <- lm(gymnastics3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_circus3y <- lm(circus3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_sportsinit3y <- lm(sportsinit3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_musicclass3y <- lm(musicclass3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_danceclass3y <- lm(danceclass3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_visualarts3y <- lm(visualarts3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+elfe_horseriding3y <- lm(horseriding3y ~ sex*as.factor(meduc3) + emp2m + leave2m + twopar2m, elferesources)
+
+mcs_read3y <- lm(read3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_library3y <- lm(library3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_counting3y <- lm(counting3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_songs3y <- lm(songs3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_alphabet3y <- lm(alphabet3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_paint3y <- lm(paint3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_physical3y <- lm(physical3y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_read5y <- lm(read5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_stories5y <- lm(stories5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_songs5y <- lm(songs5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_paint5y <- lm(paint5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_physical5y <- lm(physical5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_indoor5y <- lm(indoor5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+mcs_park5y <- lm(park5y ~ sex*as.factor(meduc3) + emp9m + leave9m + twopar9m, mcsresources)
+
+```
+
+
+```{r}
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_doctor, "doctor2m3", "France"),
+  extract_coef_edu(elfe_nappies, "nappies2m3", "France"),
+  extract_coef_edu(elfe_laundry, "laundry2m3", "France"),
+  extract_coef_edu(elfe_night, "night2m3", "France"),
+  extract_coef_edu(elfe_clean, "clean2m3", "France"),
+  extract_coef_edu(elfe_cook, "cook2m3", "France"),
+  extract_coef_edu(elfe_diy, "diy2m3", "France"),
+  extract_coef_edu(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef_edu(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef_edu(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef_edu(mcs_night, "night9m3", "UK"),
+  extract_coef_edu(mcs_clean, "clean9m3", "UK"),
+  extract_coef_edu(mcs_cook, "cook9m3", "UK"),
+  extract_coef_edu(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 11.4,
+  estimate = 0.035,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 10,
+  estimate = 0.02,
+  yend = 0.05,
+  country = "UK"
+)
+
+
+acoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Role modelling",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_socialsuccess, "socialsuccess2m", "France"),
+  extract_coef_edu(elfe_lovelife, "lovelife2m", "France"),
+  extract_coef_edu(elfe_interestingjob, "interestingjob2m", "France"),
+  extract_coef_edu(elfe_passion, "passion2m", "France"),
+  extract_coef_edu(elfe_calmlife, "calmlife2m", "France"),
+  extract_coef_edu(elfe_bigfamily, "bigfamily2m", "France"),
+  extract_coef_edu(elfe_lotsoffriends, "lotsoffriends2m", "France"),
+  extract_coef_edu(elfe_fairerworld, "fairerworld2m", "France"),
+  extract_coef_edu(elfe_goodhealth, "goodhealth2m", "France"),
+  extract_coef_edu(mcs_independence, "independence3y", "UK"),
+  extract_coef_edu(mcs_obedience, "obedience3y", "UK"),
+  extract_coef_edu(mcs_negotiation, "negotiation3y", "UK"),
+  extract_coef_edu(mcs_respectelders, "respectelders3y", "UK"),
+  extract_coef_edu(mcs_dowellatschool, "dowellatschool3y", "UK"),
+  extract_coef_edu(mcs_instillreligious, "instillreligiousvalues3y", "UK"),
+  extract_coef_edu(mcs_bewellliked, "bewellliked3y", "UK"),
+  extract_coef_edu(mcs_thinkforself, "thinkforself3y", "UK"),
+  extract_coef_edu(mcs_workhard, "workhard3y", "UK"),
+  extract_coef_edu(mcs_helpothers, "helpothers3y", "UK"),
+  extract_coef_edu(mcs_obeyparents, "obeyparents3y", "UK"),
+  extract_coef_edu(mcs_qualityreligious, "qualityreligiousvalues3y", "UK")
+)
+
+france_order <- c("goodhealth2m", "interestingjob2m", "socialsuccess2m", "lovelife2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "passion2m")
+uk_order <- c("respectelders3y", "independence3y", "dowellatschool3y", "obedience3y", "negotiation3y", "helpothers3y", "thinkforself3y", "workhard3y", "instillreligiousvalues3y", "obeyparents3y", "bewellliked3y", "qualityreligiousvalues3y")
+model_levels <- c(uk_order, france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 17,
+  estimate = 0.02,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 16,
+  estimate = 0.01,
+  yend = 0.03,
+  country = "UK"
+)
+
+bcoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Attitudes and expectations",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_edu(elfe_paint3y, "frpaint3y", "France"),
+  extract_coef_edu(elfe_read3y, "frread3y", "France"),
+  extract_coef_edu(elfe_music3y, "music3y", "France"),
+  extract_coef_edu(elfe_readplus3y, "readplus3y", "France"),
+  extract_coef_edu(elfe_counting3y, "frcounting3y", "France"),
+  extract_coef_edu(elfe_writing3y, "writing3y", "France"),
+  extract_coef_edu(elfe_puzzle3y, "puzzle3y", "France"),
+  extract_coef_edu(elfe_anyactivity3y, "anyactivity3y", "France"),
+  extract_coef_edu(elfe_swimming3y, "swimming3y", "France"),
+  extract_coef_edu(elfe_gymnastics3y, "gymnastics3y", "France"),
+  extract_coef_edu(elfe_circus3y, "circus3y", "France"),
+  extract_coef_edu(elfe_sportsinit3y, "sportsinit3y", "France"),
+  extract_coef_edu(elfe_musicclass3y, "musicclass3y", "France"),
+  extract_coef_edu(elfe_danceclass3y, "danceclass3y", "France"),
+  extract_coef_edu(elfe_visualarts3y, "visualarts3y", "France"),
+  extract_coef_edu(elfe_horseriding3y, "horseriding3y", "France"),
+  extract_coef_edu(mcs_read3y, "read3y", "UK"),
+  extract_coef_edu(mcs_library3y, "library3y", "UK"),
+  extract_coef_edu(mcs_counting3y, "counting3y", "UK"),
+  extract_coef_edu(mcs_songs3y, "songs3y", "UK"),
+  extract_coef_edu(mcs_alphabet3y, "alphabet3y", "UK"),
+  extract_coef_edu(mcs_paint3y, "paint3y", "UK"),
+  extract_coef_edu(mcs_physical3y, "physical3y", "UK"),
+  extract_coef_edu(mcs_read5y, "read5y", "UK"),
+  extract_coef_edu(mcs_stories5y, "stories5y", "UK"),
+  extract_coef_edu(mcs_songs5y, "songs5y", "UK"),
+  extract_coef_edu(mcs_paint5y, "paint5y", "UK"),
+  extract_coef_edu(mcs_physical5y, "physical5y", "UK"),
+  extract_coef_edu(mcs_indoor5y, "indoor5y", "UK"),
+  extract_coef_edu(mcs_park5y, "park5y", "UK")
+)
+
+france_order <- c("anyactivity3y", "writing3y", "readplus3y", "puzzle3y", "frcounting3y", "frpaint3y", "frread3y", "music3y",
+                  "circus3y", "visualarts3y", "horseriding3y", "musicclass3y", "danceclass3y", "swimming3y", "sportsinit3y", "gymnastics3y")
+uk_order <- c("library3y", "physical3y", "alphabet3y", "songs3y", "counting3y", "paint3y", "read3y",
+              "stories5y", "physical5y", "paint5y", "park5y", "songs5y", "indoor5y", "read5y")
+model_levels <- c(rev(uk_order), rev(france_order))
+
+model_levels <- c(rev(uk_order), rev(france_order))
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 23,
+  estimate = 0.075,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 22,
+  estimate = 0.05,
+  yend = 0.1,
+  country = "UK"
+)
+
+ccoef1 <- 
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "Children's access to resources",
+    x = "",
+    y = "Coefficient for education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+```
+
+
+
+
+```{r}
+
+coef_df <- rbind(
+  extract_coef_int(elfe_doctor, "doctor2m3", "France"),
+  extract_coef_int(elfe_nappies, "nappies2m3", "France"),
+  extract_coef_int(elfe_laundry, "laundry2m3", "France"),
+  extract_coef_int(elfe_night, "night2m3", "France"),
+  extract_coef_int(elfe_clean, "clean2m3", "France"),
+  extract_coef_int(elfe_cook, "cook2m3", "France"),
+  extract_coef_int(elfe_diy, "diy2m3", "France"),
+  extract_coef_int(mcs_doctor, "doctor9m3", "UK"),
+  extract_coef_int(mcs_nappies, "nappies9m3", "UK"),
+  extract_coef_int(mcs_laundry, "laundry9m3", "UK"),
+  extract_coef_int(mcs_night, "night9m3", "UK"),
+  extract_coef_int(mcs_clean, "clean9m3", "UK"),
+  extract_coef_int(mcs_cook, "cook9m3", "UK"),
+  extract_coef_int(mcs_diy, "diy9m3", "UK")
+)
+
+france_order <- rev(c("doctor2m3", "nappies2m3", "night2m3", 
+                      "laundry2m3", "clean2m3", "cook2m3", "diy2m3"))
+uk_order <- rev(gsub("2m3", "9m3", france_order))
+model_levels <- c(rev(uk_order), france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 11.4,
+  estimate = 0.035,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 10,
+  estimate = 0.02,
+  yend = 0.05,
+  country = "UK"
+)
+
+
+acoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_int(elfe_socialsuccess, "socialsuccess2m", "France"),
+  extract_coef_int(elfe_lovelife, "lovelife2m", "France"),
+  extract_coef_int(elfe_interestingjob, "interestingjob2m", "France"),
+  extract_coef_int(elfe_passion, "passion2m", "France"),
+  extract_coef_int(elfe_calmlife, "calmlife2m", "France"),
+  extract_coef_int(elfe_bigfamily, "bigfamily2m", "France"),
+  extract_coef_int(elfe_lotsoffriends, "lotsoffriends2m", "France"),
+  extract_coef_int(elfe_fairerworld, "fairerworld2m", "France"),
+  extract_coef_int(elfe_goodhealth, "goodhealth2m", "France"),
+  extract_coef_int(mcs_independence, "independence3y", "UK"),
+  extract_coef_int(mcs_obedience, "obedience3y", "UK"),
+  extract_coef_int(mcs_negotiation, "negotiation3y", "UK"),
+  extract_coef_int(mcs_respectelders, "respectelders3y", "UK"),
+  extract_coef_int(mcs_dowellatschool, "dowellatschool3y", "UK"),
+  extract_coef_int(mcs_instillreligious, "instillreligiousvalues3y", "UK"),
+  extract_coef_int(mcs_bewellliked, "bewellliked3y", "UK"),
+  extract_coef_int(mcs_thinkforself, "thinkforself3y", "UK"),
+  extract_coef_int(mcs_workhard, "workhard3y", "UK"),
+  extract_coef_int(mcs_helpothers, "helpothers3y", "UK"),
+  extract_coef_int(mcs_obeyparents, "obeyparents3y", "UK"),
+  extract_coef_int(mcs_qualityreligious, "qualityreligiousvalues3y", "UK")
+)
+
+france_order <- c("goodhealth2m", "interestingjob2m", "socialsuccess2m", "lovelife2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "passion2m")
+uk_order <- c("respectelders3y", "independence3y", "dowellatschool3y", "obedience3y", "negotiation3y", "helpothers3y", "thinkforself3y", "workhard3y", "instillreligiousvalues3y", "obeyparents3y", "bewellliked3y", "qualityreligiousvalues3y")
+model_levels <- c(uk_order, france_order)
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 17,
+  estimate = 0.02,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 16,
+  estimate = 0.01,
+  yend = 0.03,
+  country = "UK"
+)
+
+bcoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+
+coef_df <- rbind(
+  extract_coef_int(elfe_paint3y, "frpaint3y", "France"),
+  extract_coef_int(elfe_read3y, "frread3y", "France"),
+  extract_coef_int(elfe_music3y, "music3y", "France"),
+  extract_coef_int(elfe_readplus3y, "readplus3y", "France"),
+  extract_coef_int(elfe_counting3y, "frcounting3y", "France"),
+  extract_coef_int(elfe_writing3y, "writing3y", "France"),
+  extract_coef_int(elfe_puzzle3y, "puzzle3y", "France"),
+  extract_coef_int(elfe_anyactivity3y, "anyactivity3y", "France"),
+  extract_coef_int(elfe_swimming3y, "swimming3y", "France"),
+  extract_coef_int(elfe_gymnastics3y, "gymnastics3y", "France"),
+  extract_coef_int(elfe_circus3y, "circus3y", "France"),
+  extract_coef_int(elfe_sportsinit3y, "sportsinit3y", "France"),
+  extract_coef_int(elfe_musicclass3y, "musicclass3y", "France"),
+  extract_coef_int(elfe_danceclass3y, "danceclass3y", "France"),
+  extract_coef_int(elfe_visualarts3y, "visualarts3y", "France"),
+  extract_coef_int(elfe_horseriding3y, "horseriding3y", "France"),
+  extract_coef_int(mcs_read3y, "read3y", "UK"),
+  extract_coef_int(mcs_library3y, "library3y", "UK"),
+  extract_coef_int(mcs_counting3y, "counting3y", "UK"),
+  extract_coef_int(mcs_songs3y, "songs3y", "UK"),
+  extract_coef_int(mcs_alphabet3y, "alphabet3y", "UK"),
+  extract_coef_int(mcs_paint3y, "paint3y", "UK"),
+  extract_coef_int(mcs_physical3y, "physical3y", "UK"),
+  extract_coef_int(mcs_read5y, "read5y", "UK"),
+  extract_coef_int(mcs_stories5y, "stories5y", "UK"),
+  extract_coef_int(mcs_songs5y, "songs5y", "UK"),
+  extract_coef_int(mcs_paint5y, "paint5y", "UK"),
+  extract_coef_int(mcs_physical5y, "physical5y", "UK"),
+  extract_coef_int(mcs_indoor5y, "indoor5y", "UK"),
+  extract_coef_int(mcs_park5y, "park5y", "UK")
+)
+
+france_order <- c("circus3y", "visualarts3y", "horseriding3y", "musicclass3y", "danceclass3y", "swimming3y", "sportsinit3y", "gymnastics3y", "anyactivity3y",
+                  "writing3y", "readplus3y", "puzzle3y", "frcounting3y", "frpaint3y", "frread3y", "music3y")
+uk_order <- c("library3y", "physical3y", "alphabet3y", "songs3y", "counting3y", "paint3y", "read3y",
+              "stories5y", "physical5y", "paint5y", "park5y", "songs5y", "indoor5y", "read5y")
+model_levels <- c(rev(uk_order), rev(france_order))
+
+model_levels <- c(rev(uk_order), rev(france_order))
+
+coef_df <- coef_df %>%
+  mutate(
+    model = factor(model, levels = model_levels),
+    country = factor(country, levels = c("UK", "France"))
+  )
+
+annotation_df <- data.frame(
+  model = 23,
+  estimate = 0.075,
+  label = "",
+  country = "UK"
+)
+
+segment_df <- data.frame(
+  model = 22,
+  estimate = 0.05,
+  yend = 0.1,
+  country = "UK"
+)
+
+ccoef2 <-
+  ggplot(coef_df, aes(x = model, y = estimate)) +
+  geom_point(size = 1) +
+  coord_flip(clip = "off") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  facet_wrap(~country) +
+  labs(
+    title = "",
+    x = "",
+    y = "Interaction term sex*education",
+    color = "Country"
+  ) +
+  theme_minimal(base_size = 3) +
+  theme(
+    axis.text.y = element_text(size = 9),
+    axis.title.x = element_text(size = 10),
+    axis.title.y = element_text(size = 10),
+    strip.text = element_text(size = 10),
+    plot.title = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 9, angle = 45, hjust = 1),
+    legend.position = "none",
+  ) +
+  geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
+
+plot1 <- acoef1 | acoef2
+plot2 <- bcoef1 | bcoef2 
+plot3 <- ccoef1 | ccoef2
+
+ggsave("interaction1_control.png", plot = plot1, width = 6.8, height = 4.5)
+ggsave("interaction2_control.png", plot = plot2, width = 6.8, height = 6)
+ggsave("interaction3_control.png", plot = plot3, width = 6.8, height = 8)
+
+# plot1
+# plot2
+# plot3
+
+```
+
+

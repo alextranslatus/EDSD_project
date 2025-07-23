@@ -1,0 +1,317 @@
+---
+title: "Table 1"
+author: "Alex Sheridan"
+date: "2025-07-22"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+for(
+  pkg in c(
+    "haven", # stata whatever
+    "ggplot2", # graphs
+    "patchwork", # putting plots together
+    "ggtext", # bold ggplot annotation
+    "viridis", # colors
+    "dplyr", # basics
+    "tidyr", # basics
+    "survey", # survey weights
+    "srvyr", # survey weights?
+    "gtsummary", # summary tables
+    "kableExtra", # styling of tables
+    "kable",
+    "forcats", # fct_reorder
+    "beepr", # helps save time
+    "stringr", # in pivoting: separate the suffix to get variables per year
+    "data.table" # data.table 
+  )
+){
+  if(!require(pkg, quietly = TRUE, character.only = TRUE)){
+    install.packages(pkg)
+  }
+}
+
+# Functions ####
+source("scripts/0_functions.R")
+
+# Data ####
+load(file = "data/analysisdata/elfemini.Rdata")
+load(file = "data/analysisdata/mcsmini.Rdata")
+
+# Non factorised (for regressions)
+
+elfe5 <- elfemini %>%
+  drop_na(wgt5y) %>%
+  drop_na(meduc3)
+welfe5 <- svydesign(ids = ~1, data = elfe5, weights = ~ elfe5$wgt5y)
+
+mcs5 <- mcsmini %>%
+  filter(inwave5y == 1) %>%
+  drop_na(meduc3)
+wmcs5 <- svydesign(ids = ~1, data = mcs5, weights = ~ mcs5$wgt5y)
+
+## Tasks sample 
+
+elfewhodoes <- elfe5 %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes <- svydesign(ids = ~1, data = elfewhodoes, weights = ~ elfewhodoes$wgt5y)
+
+mcswhodoes <- mcs5 %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes <- svydesign(ids = ~1, data = mcswhodoes, weights = ~ mcswhodoes$wgt5y)
+
+# Attitudes expectations sample 
+
+elfeexpect <- elfe5 %>% 
+  drop_na(socialsuccess2m, lovelife2m, interestingjob2m, passion2m, calmlife2m, bigfamily2m, lotsoffriends2m, fairerworld2m, goodhealth2m, otherwish2m)
+welfeexpect <- svydesign(ids = ~1, data = elfeexpect, weights = ~ elfeexpect$wgt5y)
+
+mcsexpect <- mcs5 %>%
+  drop_na(independence3y, obedience3y, negotiation3y, respectelders3y, dowellatschool3y, instillreligiousvalues3y,
+           bewellliked3y, thinkforself3y, workhard3y, helpothers3y, obeyparents3y, qualityreligiousvalues3y)
+wmcsexpect <- svydesign(ids = ~1, data = mcsexpect, weights = ~ mcsexpect$wgt5y)
+
+# Children's access to resources
+
+elferesources <- elfe5 %>% 
+  drop_na(frpaint3y, frread3y, music3y, readplus3y, frcounting3y, writing3y, puzzle3y, anyactivity3y,
+          swimming3y, gymnastics3y, circus3y, sportsinit3y, musicclass3y, danceclass3y, visualarts3y, horseriding3y)
+welferesources <- svydesign(ids = ~1, data = elferesources, weights = ~ elferesources$wgt5y)
+
+mcsresources <- mcs5 %>%
+  drop_na(read3y, library3y, counting3y, songs3y, alphabet3y, paint3y, physical3y,
+          read5y, stories5y, songs5y, paint5y, physical5y, indoor5y, park5y)
+wmcsresources <- svydesign(ids = ~1, data = mcsresources, weights = ~ mcsresources$wgt5y)
+
+# Factorised (for plots)
+
+elfe5_fact <- elfe5 %>%
+  mutate(across(-c(wgt1y, wgt2y, wgt3y, wgt5y), as.factor))
+
+mcs5_fact <- mcs5 %>% 
+  mutate(across(-c(wgt9m, wgt3y, wgt5y), as_factor))
+
+for(i in c("sex")) {
+  levels(elfe5_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("sex")) {
+  levels(mcs5_fact[, i]) <- c("Boy", "Girl")
+}
+
+for(i in c("meduc3")) {
+  levels(elfe5_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc3")) {
+  levels(mcs5_fact[, i]) <- c("Low", "Medium", "High")
+}
+
+for(i in c("meduc")) {
+  levels(elfe5_fact[, i]) <- c("<=bepc",  "cap-bep", "bac", "bac+2", "bac+3/4", ">bac+4")
+}
+
+for(i in c("meduc")) {
+  levels(mcs5_fact[, i]) <- c("None", "Other", "GCSE D-G", "GCSE A-C", "Trade", "A-level", "HE below deg", "Bach", "Higher deg")
+}
+
+for(i in c("famstr2m", "famstr1y", "famstr2y", "famstr3y", "famstr5y")) {
+  levels(elfe5_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("famstr9m", "famstr3y", "famstr5y")) {
+  levels(mcs5_fact[, i]) <- c("Two natural parents", "Mother only", "Father only", "Other")
+}
+
+for(i in c("twopar2m", "twopar1y", "twopar2y", "twopar3y", "twopar5y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar9m", "twopar3y", "twopar5y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("twopar")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Role modelling ####
+
+for(i in c("nappies2m3", "tuckin2m3", "bath2m3", "walk2m3", "night2m3", "doctor2m3", "dishes2m3", "groceries2m3", "cook2m3", "laundry2m3", "clean2m3", "diy2m3")) {
+  levels(elfe5_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("nappies9m3", "night9m3", "cook9m3", "clean9m3", "laundry9m3", "diy9m3", "budgetting9m3", "doctor9m3", "lookafter9m3")) {
+  levels(mcs5_fact[, i]) <- c("Mother mostly", "Balanced", "Father mostly")
+}
+
+for(i in c("leave")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave2m", "leave1y", "leave2y", "leave3y")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("leave9m", "leave3y")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp2m", "emp1y", "emp2y", "emp3y", "emp5y")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp")) {
+  levels(elfe5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp9m", "emp3y")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("emp")) {
+  levels(mcs5_fact[, i]) <- c("Both parents", "Father only", "Mother only", "Neither")
+}
+
+for(i in c("mpartemp2m", "fpartemp2m", "mpartemp1y", "fpartemp1y", "mpartemp2y", "fpartemp2y", "mpartemp3y", "fpartemp3y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("mpartemp9m", "fpartemp9m", "mpartemp3y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Attitudes expectations ####
+
+for(i in c("socialsuccess2m", "lovelife2m", "interestingjob2m", "passion2m", "calmlife2m", "bigfamily2m", "lotsoffriends2m", "fairerworld2m", "goodhealth2m", "otherwish2m")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("independence3y", "obedience3y", "negotiation3y", "respectelders3y", "dowellatschool3y", "instillreligiousvalues3y",
+           "bewellliked3y", "thinkforself3y", "workhard3y", "helpothers3y", "obeyparents3y", "qualityreligiousvalues3y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+# Children's access to resources ####
+
+for(i in c("frpaint3y", "frread3y", "music3y", "readplus3y", "frcounting3y", "writing3y", "puzzle3y",
+           "anyactivity3y",
+           "swimming3y", "gymnastics3y", "circus3y", "sportsinit3y", "musicclass3y", "danceclass3y", "visualarts3y", "horseriding3y")) {
+  levels(elfe5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("read3y", "library3y", "counting3y", "songs3y", "alphabet3y", "paint3y", "physical3y",
+           "read5y", "stories5y", "songs5y", "paint5y", "physical5y", "indoor5y", "park5y")) {
+  levels(mcs5_fact[, i]) <- c("No", "Yes")
+}
+
+for(i in c("fqcounting3y", "fqsongs3y", "fqalphabet3y", "fqpaint3y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "Occasionally or less than once a week", "1 - 2 days per week", "3 times a week", "4 times a week", "5 times a week", "6 times a week", "7 times a week constantly")
+}
+
+for(i in c("fqlibrary3y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "On special occasions", "Once a month", "Once a fortnight", "Once a week")
+}
+
+for(i in c("fqread3y", "fqread5y", "fqstories5y", "fqsongs5y", "fqpaint5y", "fqphysical5y", "fqindoor5y", "fqpark5y")) {
+  levels(mcs5_fact[, i]) <- c("Not at all", "Less often", "Once or twice a month", "Once or twice a week", "Several times a week", "Every day")
+}
+
+
+
+welfe5_fact <- svydesign(ids = ~1, data = elfe5_fact, weights = ~ elfe5_fact$wgt5y)
+wmcs5_fact <- svydesign(ids = ~1, data = mcs5_fact, weights = ~ mcs5_fact$wgt5y)
+
+
+# Role modelling sample 
+
+elfewhodoes_fact <- elfe5_fact %>% 
+  drop_na(doctor2m3, nappies2m3, laundry2m3, night2m3, clean2m3, cook2m3, diy2m3)
+welfewhodoes_fact <- svydesign(ids = ~1, data = elfewhodoes_fact, weights = ~ elfewhodoes_fact$wgt5y)
+
+mcswhodoes_fact <- mcs5_fact %>%
+  drop_na(doctor9m3, nappies9m3, laundry9m3, night9m3, clean9m3, cook9m3, diy9m3)
+wmcswhodoes_fact <- svydesign(ids = ~1, data = mcswhodoes_fact, weights = ~ mcswhodoes_fact$wgt5y)
+
+# Attitudes expectations sample 
+
+elfeexpect_fact <- elfe5_fact %>% 
+  drop_na(socialsuccess2m, lovelife2m, interestingjob2m, passion2m, calmlife2m, bigfamily2m, lotsoffriends2m, fairerworld2m, goodhealth2m, otherwish2m)
+welfeexpect_fact <- svydesign(ids = ~1, data = elfeexpect_fact, weights = ~ elfeexpect_fact$wgt5y)
+
+mcsexpect_fact <- mcs5_fact %>%
+  drop_na(independence3y, obedience3y, negotiation3y, respectelders3y, dowellatschool3y, instillreligiousvalues3y,
+           bewellliked3y, thinkforself3y, workhard3y, helpothers3y, obeyparents3y, qualityreligiousvalues3y)
+wmcsexpect_fact <- svydesign(ids = ~1, data = mcsexpect_fact, weights = ~ mcsexpect_fact$wgt5y)
+
+# Children's access to resources
+
+elferesources_fact <- elfe5_fact %>% 
+  drop_na(frpaint3y, frread3y, music3y, readplus3y, frcounting3y, writing3y, puzzle3y, anyactivity3y,
+          swimming3y, gymnastics3y, circus3y, sportsinit3y, musicclass3y, danceclass3y, visualarts3y, horseriding3y)
+welferesources_fact <- svydesign(ids = ~1, data = elferesources_fact, weights = ~ elferesources_fact$wgt5y)
+
+mcsresources_fact <- mcs5_fact %>%
+  drop_na(read3y, library3y, counting3y, songs3y, alphabet3y, paint3y, physical3y,
+          read5y, stories5y, songs5y, paint5y, physical5y, indoor5y, park5y)
+wmcsresources_fact <- svydesign(ids = ~1, data = mcsresources_fact, weights = ~ mcsresources_fact$wgt5y)
+
+
+```
+
+```{r}
+
+welfe5_fact %>% tbl_svysummary(include = c("meduc",
+                                      "meduc3",
+                                      "emp2m",
+                                      "leave2m",
+                                      "twopar2m"),
+                              label = list(meduc ~ "Mother's education",
+                                           meduc3 ~ "Mother's education (3 cat)",
+                                           emp2m ~ "Parents' work status",
+                                           leave2m ~ "M/paternity leave uptake",
+                                           twopar2m ~ "Two parents"),
+                              statistic = all_categorical() ~ c("{p}"),
+                              digits = list( ~ c(1, 1)),
+                              missing = "no") %>%
+  modify_header(label = "**Variable**", all_stat_cols() ~ "**France (%)**, N = {n_unweighted}") %>%
+  modify_caption("Mother's education and covariates using the weighted sample: Percentages") %>%
+  as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
+  kable_styling(latex_options = c("HOLD_position", "repeat_header"))
+
+
+
+wmcs5_fact %>% tbl_svysummary(include = c("meduc",
+                                      "meduc3",
+                                      "emp9m",
+                                      "leave9m",
+                                      "twopar9m"),
+                              label = list(meduc ~ "Mother's education",
+                                           meduc3 ~ "Mother's education (3 cat)",
+                                           emp9m ~ "Parents' work status",
+                                           leave9m ~ "M/paternity leave uptake",
+                                           twopar9m ~ "Two parents"),
+                              statistic = all_categorical() ~ c("{p}"),
+                              digits = list( ~ c(1, 1)),
+                              missing = "no") %>%
+  modify_header(label = "**Variable**", all_stat_cols() ~ "**UK (%)**, N = {n_unweighted}") %>%
+  modify_caption("Mother's education and covariates using the weighted sample: Percentages") %>%
+  as_kable_extra(booktabs = TRUE, linesep = "", longtable = TRUE) %>%
+  kable_styling(latex_options = c("HOLD_pos1ition", "repeat_header"))
+
+```

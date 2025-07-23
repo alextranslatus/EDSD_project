@@ -521,12 +521,94 @@ tabe <- function(x) {
 
 
 
+extract_coef <- function(model, model_name, country_name) {
+  coef_val <- coef(model)["sex"]
+  ci_vals <- confint(model, "sex", level = 0.95)
+  
+  data.frame(
+    model = model_name,
+    estimate = coef_val,
+    conf.low = ci_vals[1],
+    conf.high = ci_vals[2],
+    country = country_name
+  )
+}
 
+extract_coef_edu <- function(model, model_name, country_name) {
+  coef_val <- coef(model)["meduc3"]
+  ci_vals <- confint(model, "meduc3", level = 0.95)
+  
+  data.frame(
+    model = model_name,
+    estimate = coef_val,
+    conf.low = ci_vals[1],
+    conf.high = ci_vals[2],
+    country = country_name
+  )
+}
 
+extract_coef_int <- function(model, model_name, country_name) {
+  # Get all coefficients and confidence intervals
+  coefs <- coef(model)
+  confs <- confint(model, level = 0.95)
+  
+  # Match the interaction term for sex and meduc3 level 3 ("High")
+  interaction_term <- grep("sex.*:as\\.factor\\(meduc3\\)3", names(coefs), value = TRUE)
+  
+  if (length(interaction_term) == 1) {
+    data.frame(
+      model = model_name,
+      term = interaction_term,
+      estimate = coefs[interaction_term],
+      conf.low = confs[interaction_term, 1],
+      conf.high = confs[interaction_term, 2],
+      country = country_name,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    data.frame(
+      model = model_name,
+      term = NA,
+      estimate = NA,
+      conf.low = NA,
+      conf.high = NA,
+      country = country_name,
+      stringsAsFactors = FALSE
+    )
+  }
+}
 
-
-
-
-
+extract_coef_edu <- function(model, model_name, country_name) {
+  # Get all coefficients and confidence intervals
+  coefs <- coef(model)
+  confs <- confint(model, level = 0.95)
+  
+  # Match only the main effect for level 3 of meduc3
+  level3_main_term <- grep("^as\\.factor\\(meduc3\\)3$", names(coefs), value = TRUE)
+  
+  # If the term is found, return its info
+  if (length(level3_main_term) == 1) {
+    data.frame(
+      model = model_name,
+      term = level3_main_term,
+      estimate = coefs[level3_main_term],
+      conf.low = confs[level3_main_term, 1],
+      conf.high = confs[level3_main_term, 2],
+      country = country_name,
+      stringsAsFactors = FALSE
+    )
+  } else {
+    # If not found, return an empty row or NA
+    data.frame(
+      model = model_name,
+      term = NA,
+      estimate = NA,
+      conf.low = NA,
+      conf.high = NA,
+      country = country_name,
+      stringsAsFactors = FALSE
+    )
+  }
+}
 
 
