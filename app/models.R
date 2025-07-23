@@ -373,5 +373,5 @@ save(
   modellinguk_models_list,
   resourcesfr_models_list,
   resourcesuk_models_list,
-  file = "shinyapp/shinydata/models_lists.RData"
+  file = "app/data/models_lists.RData"
 )
