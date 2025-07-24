@@ -337,7 +337,7 @@ acoef <- ggplot(coef_df, aes(x = model, y = estimate)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "... Irrespective of having a son\n or a daughter",
+    title = "b. Coefficient for child sex",
     x = "",
     y = "Coefficient for child sex",
     color = "Country"
@@ -393,7 +393,7 @@ afr <-
   geom_col(position = "fill") +
   coord_flip(clip = "off") + 
   labs(
-    title = "Fathers do less...",
+    title = "a. Distributions of variables",
     x = "France (N = 8 866)", 
     y = "",
     fill = "Response"
@@ -464,7 +464,7 @@ adist <- afr / auk
 
 plot <- adist | acoef
 
-ggsave("rolemodeling.png", plot = plot, width = 6.8, height = 4.5)
+ggsave("foroverleaf/rolemodeling.png", plot = plot, width = 6.8, height = 4.5)
 
 plot
 
@@ -552,7 +552,7 @@ acoef <- ggplot(coef_df, aes(x = model, y = estimate)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "More differences in terms\n of expectations",
+    title = "b. Coefficient for child sex",
     x = "",
     y = "Coefficient for child sex",
     color = "Country"
@@ -605,7 +605,7 @@ afr <-
   geom_col(position = "fill") +
   coord_flip(clip = "off") + 
   labs(
-    title = "Wish for the child,\nvalues to instill:",
+    title = "a. Distributions of variables",
     x = "France (N = 10 957)",
     y = "",
     fill = "Response"
@@ -677,7 +677,7 @@ adist <- afr / auk + plot_layout(heights = c(0.75, 1))
 
 plot <- adist | acoef
 
-ggsave("attitudes.png", plot = plot, width = 6.8, height = 6)
+ggsave("foroverleaf/attitudes.png", plot = plot, width = 6.8, height = 6)
 
 plot
 
@@ -788,7 +788,7 @@ acoef <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Slightly more for girls\n except for some physical\n activities",
+    title = "b. Coefficient for child sex",
     x = "",
     y = "Coefficient for child sex",
     color = "Country"
@@ -842,7 +842,7 @@ afr <-
   geom_col(position = "fill") +
   coord_flip(clip = "off") + 
   labs(
-    title = "Uptake of activities:",
+    title = "a. Distributions of variables",
     x = "France (N = 10 593)",
     y = "",
     fill = "Response"
@@ -915,7 +915,7 @@ adist <-
 
 plot <- adist | acoef
 
-ggsave("resources.png", plot = plot, width = 6.8, height = 8)
+ggsave("foroverleaf/resources.png", plot = plot, width = 6.8, height = 8)
 
 plot
 
@@ -1051,7 +1051,7 @@ acoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Role modelling",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1125,7 +1125,7 @@ bcoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Attitudes and expectations",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1212,7 +1212,7 @@ ccoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Children's access to resources",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1229,11 +1229,7 @@ ccoef1 <-
   ) +
   geom_text(data = annotation_df, aes(label = label), color = rev(viridis(1, option = "D")), size = 9/.pt) 
 
-acoef1 | bcoef1 | ccoef1
-
 ```
-
-
 
 
 ```{r}
@@ -1289,7 +1285,7 @@ acoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -1363,7 +1359,7 @@ bcoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -1450,7 +1446,7 @@ ccoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -1471,13 +1467,13 @@ plot1 <- acoef1 | acoef2
 plot2 <- bcoef1 | bcoef2 
 plot3 <- ccoef1 | ccoef2
 
-ggsave("interaction1.png", plot = plot1, width = 6.8, height = 4.5)
-ggsave("interaction2.png", plot = plot2, width = 6.8, height = 6)
-ggsave("interaction3.png", plot = plot3, width = 6.8, height = 8)
+ggsave("foroverleaf/interaction1.png", plot = plot1, width = 6.8, height = 4.5)
+ggsave("foroverleaf/interaction2.png", plot = plot2, width = 6.8, height = 6)
+ggsave("foroverleaf/interaction3.png", plot = plot3, width = 6.8, height = 8)
 
-# plot1
-# plot2
-# plot3
+plot1
+plot2
+plot3
 
 
 ```
@@ -1614,7 +1610,7 @@ acoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Role modelling",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1688,7 +1684,7 @@ bcoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Attitudes and expectations",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1775,7 +1771,7 @@ ccoef1 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "Children's access to resources",
+    title = "a. Coefficients for mother's education",
     x = "",
     y = "Coefficient for education",
     color = "Country"
@@ -1851,7 +1847,7 @@ acoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -1925,7 +1921,7 @@ bcoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -2012,7 +2008,7 @@ ccoef2 <-
   geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
   facet_wrap(~country) +
   labs(
-    title = "",
+    title = "b. Interaction terms",
     x = "",
     y = "Interaction term sex*education",
     color = "Country"
@@ -2033,13 +2029,13 @@ plot1 <- acoef1 | acoef2
 plot2 <- bcoef1 | bcoef2 
 plot3 <- ccoef1 | ccoef2
 
-ggsave("interaction1_control.png", plot = plot1, width = 6.8, height = 4.5)
-ggsave("interaction2_control.png", plot = plot2, width = 6.8, height = 6)
-ggsave("interaction3_control.png", plot = plot3, width = 6.8, height = 8)
+ggsave("foroverleaf/interaction1_control.png", plot = plot1, width = 6.8, height = 4.5)
+ggsave("foroverleaf/interaction2_control.png", plot = plot2, width = 6.8, height = 6)
+ggsave("foroverleaf/interaction3_control.png", plot = plot3, width = 6.8, height = 8)
 
-# plot1
-# plot2
-# plot3
+plot1
+plot2
+plot3
 
 ```
 
