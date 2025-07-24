@@ -2,7 +2,7 @@
 library(shiny)
 library(stargazer)
 
-load("~/app/data/models_lists.RData")
+load("data/models_lists.RData")
 
 ui <- fluidPage(
   titlePanel("Appendix: Regression results"),
