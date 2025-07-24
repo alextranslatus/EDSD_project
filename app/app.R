@@ -2,7 +2,7 @@
 library(shiny)
 library(stargazer)
 
-load("./app/data/models_lists.RData")
+load("./data/models_lists.RData")
 
 # Replace with your actual model list
 modellingfr_models_list <- list(
